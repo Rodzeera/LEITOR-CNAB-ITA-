@@ -59,6 +59,11 @@ seletor. O controle “Upload CNAB240” é exclusivamente visual e desabilitado
 Não existem importação por drag & drop, label associado ao input ou uploader
 paralelo do Streamlit.
 
+Na tabela de campos, a coluna **Interpretado** contém apenas o valor. Notas,
+constantes, preenchimentos fixos, formatos e regras do layout são apresentados
+na coluna **Observações**, usando 📖, 📌 e ℹ️. Os ícones exibem um resumo no
+tooltip e abrem o conteúdo completo no modal.
+
 ## Publicação no Streamlit Community Cloud
 
 1. Envie o conteúdo desta pasta para a raiz de um repositório GitHub.

@@ -86,5 +86,14 @@ require(
 )
 require("file_uploader" not in web_py, "Streamlit ainda possui um segundo uploader")
 require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web ainda injeta arquivo")
+require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
+require("fieldObservations" in desktop_js, "Metadados não foram centralizados em Observações")
+require('icon:"📖"' in desktop_js, "Ícone de nota ausente")
+require('icon:"📌"' in desktop_js, "Ícone de constante ausente")
+require('icon:"ℹ️"' in desktop_js, "Ícone de regra geral ausente")
+require(
+    "${esc(f.interpreted)}</td><td>" in desktop_js,
+    "A coluna Interpretado ainda mistura observações",
+)
 
 print("OK — auditoria de deploy concluída.")

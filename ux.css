@@ -16,3 +16,29 @@
   cursor: default;
   opacity: 1;
 }
+
+.obs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 72px;
+}
+
+.obs-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-color: var(--line);
+  background: var(--card);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.obs-icon:hover,
+.obs-icon:focus-visible {
+  border-color: var(--orange);
+  background: #fff7ef;
+  outline: none;
+}
