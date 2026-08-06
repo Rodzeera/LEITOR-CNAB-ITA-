@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Leitor CNAB 240 Itaú</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header><div class="brand"><span class="logo">CNAB</span><div><h1>Leitor CNAB 240 Itaú</h1><p>Manual SISPAG v086 · análise inteiramente local</p></div></div><button id="theme" class="ghost">◐ Tema</button></header>
+<main>
+  <section id="drop" class="drop"><input id="file" type="file" accept=".rem,.txt,text/plain"><div class="drop-icon">⇧</div><h2>Importe seu arquivo de remessa</h2><p>Arraste um .rem ou .txt aqui, ou <label for="file">selecione o arquivo</label></p><small>Nenhum dado sai do seu computador.</small></section>
+  <section id="workspace" hidden>
+    <div class="toolbar"><div><strong id="filename"></strong><span id="meta"></span></div><button id="newFile" class="ghost">Trocar arquivo</button></div>
+    <div id="stats" class="stats"></div>
+    <div class="filters">
+      <input id="search" placeholder="Buscar campo, valor ou mensagem…">
+      <select id="lotFilter"><option value="">Todos os lotes</option></select>
+      <select id="segmentFilter"><option value="">Todos os segmentos</option></select>
+      <select id="severityFilter"><option value="">Todas as severidades</option><option value="erro">Erros</option><option value="aviso">Avisos</option></select>
+      <select id="lineFilter"><option value="">Todas as linhas</option></select>
+    </div>
+    <div class="grid">
+      <aside><div class="aside-title"><h3>Registros</h3><span id="visibleCount"></span></div><div id="records" class="records"></div></aside>
+      <article id="detail"><div class="empty">Selecione um registro para inspecionar seus 240 caracteres.</div></article>
+    </div>
+  </section>
+</main>
+<dialog id="help"><button class="close" onclick="this.closest('dialog').close()">×</button><h2>Sobre a validação</h2><p>Os layouts e a terminologia vêm do Manual Técnico SISPAG Itaú CNAB 240 v086 (05/05/2022). Validações condicionais dependem da forma de pagamento informada no header do lote.</p></dialog>
+<button class="help" onclick="document.querySelector('#help').showModal()">?</button>
+<script src="spec.js"></script><script src="parser/parser-core.js"></script><script src="app.js"></script>
+</body></html>
