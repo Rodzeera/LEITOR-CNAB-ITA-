@@ -88,6 +88,14 @@ for layout_id, layout in spec["layouts"].items():
         require(field["start"] == expected_start, f"Lacuna ou sobreposição em {layout_id}:{expected_start}")
         expected_start = field["end"] + 1
         require(field.get("name") != "Campo", f"Campo sem identificação em {layout_id}:{field['start']}")
+        picture = field.get("picture", "")
+        require(picture[:1] in {"9", "X"}, f"Tipo Picture desconhecido em {layout_id}:{field['start']}: {picture}")
+        quantities = [int(value) for value in re.findall(r"\((\d+)\)", picture)]
+        require(quantities, f"Picture sem quantidade em {layout_id}:{field['start']}: {picture}")
+        require(
+            sum(quantities) == field["end"] - field["start"] + 1,
+            f"Tamanho do Picture divergente em {layout_id}:{field['start']}: {picture}",
+        )
         require(isinstance(field.get("observations"), list), f"Observações ausentes em {layout_id}:{field['start']}")
         for observation in field["observations"]:
             explicit_observations += 1
@@ -127,6 +135,12 @@ require(
 require("file_uploader" not in web_py, "Streamlit ainda possui um segundo uploader")
 require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web ainda injeta arquivo")
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
+require("<th>Picture</th>" not in desktop_js, "A coluna Picture ainda está visível")
+require(desktop_js.count("<th>Tipo</th>") == 1, "Coluna Tipo ausente ou duplicada")
+require(desktop_js.count("<th>Qtde</th>") == 1, "Coluna Qtde ausente ou duplicada")
+require("function pictureParts" in desktop_js, "Picture não é convertido automaticamente")
+require('"9":"Numérico"' in desktop_js and 'X:"Caractere"' in desktop_js, "Mapeamento de tipos incompleto")
+require("${esc(f.picture)}" not in desktop_js, "A notação Picture ainda é exibida na tabela")
 require("fieldObservations" in desktop_js, "Metadados não foram centralizados em Observações")
 require("f.observations||[]" in desktop_js, "A interface não usa as associações explícitas por campo")
 require("matchAll(/NOTA" not in desktop_js, "A interface ainda infere notas pelo texto")

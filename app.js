@@ -46,13 +46,19 @@ function fieldObservations(f){
 function observationButton(observation){
   return `<button type="button" class="obs-icon" aria-label="${esc(observation.title)}" title="${esc(observation.title+": "+observation.text)}" data-title="${esc(observation.title)}" data-text="${esc(observation.text)}">${observation.icon}</button>`;
 }
+function pictureParts(picture,fallbackSize){
+  const notation=String(picture||"").trim().toUpperCase(),code=notation.match(/^([A-Z9])/i)?.[1]||"";
+  const labels={"9":"Numérico",X:"Caractere",A:"Alfabético",N:"Numérico"};
+  const quantities=[...notation.matchAll(/\((\d+)\)/g)].map(match=>Number(match[1]));
+  return {type:labels[code]||code||"—",quantity:quantities.length?quantities.reduce((total,value)=>total+value,0):fallbackSize};
+}
 function show(i){
   const r=analysis.records[i];if(!r)return;
   const marks=[...r.issues].filter(x=>x.start&&x.end).sort((a,b)=>a.start-b.start);let raw="",p=1;
   marks.forEach(m=>{if(m.start<p)return;raw+=esc(r.raw.slice(p-1,m.start-1))+"<mark>"+esc(r.raw.slice(m.start-1,m.end))+"</mark>";p=m.end+1});raw+=esc(r.raw.slice(p-1));
   const issues=r.issues.length?`<div class="issues">${r.issues.map(x=>`<div class="issue ${x.severity}"><b>${x.severity.toUpperCase()}</b> · posições ${x.start}-${x.end}: ${esc(x.message)}</div>`).join("")}</div>`:"";
-  const rows=r.fields.map(f=>{const bad=f.issues.length?"field-error":"",observations=fieldObservations(f).map(observationButton).join("");return`<tr class="${bad}"><td>${f.start}–${f.end}</td><td><b>${esc(f.name)}</b><br><small>${esc(f.meaning)}</small></td><td><code>${esc(f.picture)}</code></td><td><code>${esc(f.value)}</code></td><td>${esc(f.interpreted)}</td><td><div class="obs-list">${observations}</div></td></tr>`}).join("");
-  $("#detail").innerHTML=`<div class="detail-head"><div><h2>Linha ${r.line} · ${esc(r.title)}</h2><p>Layout do manual, página ${S.layouts[r.key]?.manualPage||"—"} · ${r.raw.length} caracteres</p></div><span class="badge ${r.issues.length?"erro":""}">${r.issues.length?r.issues.length+" ocorrência(s)":"Registro válido"}</span></div><div class="raw">${raw||"(linha vazia)"}</div>${issues}<table class="fields"><thead><tr><th>Posição</th><th>Campo / significado</th><th>Picture</th><th>Valor bruto</th><th>Interpretado</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const rows=r.fields.map(f=>{const bad=f.issues.length?"field-error":"",observations=fieldObservations(f).map(observationButton).join(""),format=pictureParts(f.picture,f.end-f.start+1);return`<tr class="${bad}"><td>${f.start}–${f.end}</td><td><b>${esc(f.name)}</b><br><small>${esc(f.meaning)}</small></td><td>${esc(format.type)}</td><td>${format.quantity}</td><td><code>${esc(f.value)}</code></td><td>${esc(f.interpreted)}</td><td><div class="obs-list">${observations}</div></td></tr>`}).join("");
+  $("#detail").innerHTML=`<div class="detail-head"><div><h2>Linha ${r.line} · ${esc(r.title)}</h2><p>Layout do manual, página ${S.layouts[r.key]?.manualPage||"—"} · ${r.raw.length} caracteres</p></div><span class="badge ${r.issues.length?"erro":""}">${r.issues.length?r.issues.length+" ocorrência(s)":"Registro válido"}</span></div><div class="raw">${raw||"(linha vazia)"}</div>${issues}<table class="fields"><thead><tr><th>Posição</th><th>Campo / significado</th><th>Tipo</th><th>Qtde</th><th>Valor bruto</th><th>Interpretado</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.querySelectorAll(".obs-icon").forEach(button=>button.onclick=()=>{$("#help h2").textContent=button.dataset.title;$("#help p").textContent=button.dataset.text;$("#help").showModal()});
 }
 ["search","lotFilter","segmentFilter","severityFilter","lineFilter"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",renderRecords));

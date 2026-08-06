@@ -13,6 +13,10 @@ for(const [id,l] of Object.entries(spec.layouts)){
     assert(f.start===expectedStart,id+" possui lacuna ou sobreposição na posição "+expectedStart);expectedStart=f.end+1;
     assert(f.start>=1&&f.end<=240&&f.start<=f.end,id+" posição inválida");
     assert(f.name!=="Campo",id+" possui campo sem identificação na posição "+f.start);
+    assert(["9","X"].includes(f.picture[0]),id+" possui tipo Picture desconhecido na posição "+f.start);
+    const quantities=[...f.picture.matchAll(/\((\d+)\)/g)].map(match=>Number(match[1]));
+    assert(quantities.length>0,id+" possui Picture sem quantidade na posição "+f.start);
+    assert(quantities.reduce((total,value)=>total+value,0)===f.end-f.start+1,id+" possui tamanho Picture divergente na posição "+f.start);
     assert(Array.isArray(f.observations),id+" não possui observações explícitas na posição "+f.start);
     for(const observation of f.observations){
       explicitObservations++;
@@ -80,9 +84,15 @@ assert((desktopSource.match(/\$\("#file"\)\.click\(\)/g)||[]).length===1,"mais d
 assert(!/dragenter|dragover|dragleave|dataTransfer/.test(desktopSource),"drag & drop ainda inicia importação");
 assert(!streamlitSource.includes("file_uploader"),"Streamlit ainda oferece outro upload");
 assert((desktopSource.match(/<th>Observações<\/th>/g)||[]).length===1,"coluna Observações ausente ou duplicada");
+assert(!desktopSource.includes("<th>Picture</th>"),"coluna Picture ainda está visível");
+assert((desktopSource.match(/<th>Tipo<\/th>/g)||[]).length===1,"coluna Tipo ausente ou duplicada");
+assert((desktopSource.match(/<th>Qtde<\/th>/g)||[]).length===1,"coluna Qtde ausente ou duplicada");
+assert(desktopSource.includes("function pictureParts"),"Picture não é convertido automaticamente");
+assert(desktopSource.includes('"9":"Numérico"')&&desktopSource.includes('X:"Caractere"'),"mapeamento de tipo incompleto");
+assert(!desktopSource.includes("${esc(f.picture)}"),"notação Picture ainda é exibida");
 assert(desktopSource.includes("fieldObservations"),"observações não estão centralizadas");
 assert(desktopSource.includes("f.observations||[]"),"interface não usa observações explícitas por campo");
 assert(!desktopSource.includes("matchAll(/NOTA"),"interface ainda infere notas pelo texto do campo");
 assert(desktopSource.includes('icon:"📖"')&&desktopSource.includes('icon:"📌"')&&desktopSource.includes('icon:"ℹ️"'),"ícones de observação ausentes");
 assert(desktopSource.includes("${esc(f.interpreted)}</td><td>"),"valor interpretado ainda mistura observações");
-console.log("OK — valor interpretado e observações estão em colunas separadas.");
+console.log("OK — Picture convertido automaticamente em Tipo e Qtde; observações preservadas.");

@@ -64,6 +64,12 @@ constantes, preenchimentos fixos, formatos e regras do layout são apresentados
 na coluna **Observações**, usando 📖, 📌 e ℹ️. Os ícones exibem um resumo no
 tooltip e abrem o conteúdo completo no modal.
 
+A notação técnica `Picture` permanece armazenada no layout, mas é apresentada
+de forma mais direta na tabela: **Tipo** (`9` como Numérico e `X` como
+Caractere) e **Qtde**, calculada automaticamente pela soma dos tamanhos da
+notação. Assim, formatos decimais compostos como `9(07)V9(08)` são exibidos
+como **Numérico / 15**, sem alterar a interpretação ou a validação do campo.
+
 ### Associação auditada das observações
 
 As observações não são inferidas por semelhança de nome ou texto durante a
