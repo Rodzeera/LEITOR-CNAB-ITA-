@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 from pathlib import Path
 
@@ -24,6 +25,7 @@ required = (
     "ux.css",
     "spec.js",
     "parser/parser-core.js",
+    "layouts/observation-audit.json",
     "utils/component_loader.py",
     "tests/smoke_streamlit.py",
 )
@@ -69,6 +71,44 @@ require(
     "A interface desktop não carrega o parser compartilhado",
 )
 
+spec_source = (ROOT / "spec.js").read_text(encoding="utf-8")
+spec_match = re.fullmatch(r"\s*window\.CNAB_SPEC\s*=\s*(\{.*\});\s*", spec_source, re.DOTALL)
+require(spec_match is not None, "spec.js não contém uma especificação válida")
+spec = json.loads(spec_match.group(1))
+require(len(spec["notes"]) == 42, "O catálogo oficial deve conter as 42 notas do manual")
+require(
+    "IDENTIFICAÇÃO DO CNPJ E AG/CONTA" in spec["notes"]["1"],
+    "A Nota 1 não corresponde ao texto oficial",
+)
+note_references = 0
+explicit_observations = 0
+for layout_id, layout in spec["layouts"].items():
+    expected_start = 1
+    for field in layout["fields"]:
+        require(field["start"] == expected_start, f"Lacuna ou sobreposição em {layout_id}:{expected_start}")
+        expected_start = field["end"] + 1
+        require(field.get("name") != "Campo", f"Campo sem identificação em {layout_id}:{field['start']}")
+        require(isinstance(field.get("observations"), list), f"Observações ausentes em {layout_id}:{field['start']}")
+        for observation in field["observations"]:
+            explicit_observations += 1
+            require(observation.get("manualPage") == layout["manualPage"], f"Página divergente em {layout_id}:{field['start']}")
+            if observation["kind"] == "note":
+                note_references += 1
+                number = str(observation["note"])
+                require(number in spec["notes"], f"Nota inexistente {number} em {layout_id}:{field['start']}")
+                require(
+                    re.search(rf"\bNOTA\s*{re.escape(number)}\b", field.get("content", ""), re.IGNORECASE),
+                    f"Nota {number} não está indicada na tabela oficial em {layout_id}:{field['start']}",
+                )
+    require(expected_start == 241, f"O layout {layout_id} não cobre exatamente as posições 1–240")
+
+audit = json.loads((ROOT / "layouts/observation-audit.json").read_text(encoding="utf-8"))
+require(audit["validatedLayouts"] == len(spec["layouts"]), "Quantidade de layouts auditados divergente")
+require(audit["validatedPositionsPerLayout"] == "1-240", "Cobertura posicional não auditada")
+require(audit["noteCatalogEntries"] == len(spec["notes"]), "Catálogo de notas divergente")
+require(audit["noteReferencesValidated"] == note_references, "Referências de notas divergentes")
+require(audit["explicitObservationsGenerated"] == explicit_observations, "Observações explícitas divergentes")
+
 html = (ROOT / "index.html").read_text(encoding="utf-8")
 desktop_js = (ROOT / "app.js").read_text(encoding="utf-8")
 web_py = (ROOT / "interface_web.py").read_text(encoding="utf-8")
@@ -88,6 +128,8 @@ require("file_uploader" not in web_py, "Streamlit ainda possui um segundo upload
 require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web ainda injeta arquivo")
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
 require("fieldObservations" in desktop_js, "Metadados não foram centralizados em Observações")
+require("f.observations||[]" in desktop_js, "A interface não usa as associações explícitas por campo")
+require("matchAll(/NOTA" not in desktop_js, "A interface ainda infere notas pelo texto")
 require('icon:"📖"' in desktop_js, "Ícone de nota ausente")
 require('icon:"📌"' in desktop_js, "Ícone de constante ausente")
 require('icon:"ℹ️"' in desktop_js, "Ícone de regra geral ausente")

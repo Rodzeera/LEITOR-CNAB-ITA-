@@ -4,7 +4,30 @@ vm.runInContext(fs.readFileSync(path.join(root,"spec.js"),"utf8"),ctx);
 const spec=ctx.window.CNAB_SPEC, assert=(x,m)=>{if(!x)throw Error(m)};
 assert(spec.manual.version==="086","versão do manual");
 assert(Object.keys(spec.layouts).length>=30,"famílias de layout");
-for(const [id,l] of Object.entries(spec.layouts)){assert(l.fields.length>0,id+" sem campos");for(const f of l.fields)assert(f.start>=1&&f.end<=240&&f.start<=f.end,id+" posição inválida")}
+assert(Object.keys(spec.notes).length===42,"catálogo completo das notas 1 a 42");
+assert(spec.notes["1"].includes("IDENTIFICAÇÃO DO CNPJ E AG/CONTA"),"texto oficial da Nota 1");
+let noteReferences=0,explicitObservations=0;
+for(const [id,l] of Object.entries(spec.layouts)){
+  assert(l.fields.length>0,id+" sem campos");let expectedStart=1;
+  for(const f of l.fields){
+    assert(f.start===expectedStart,id+" possui lacuna ou sobreposição na posição "+expectedStart);expectedStart=f.end+1;
+    assert(f.start>=1&&f.end<=240&&f.start<=f.end,id+" posição inválida");
+    assert(f.name!=="Campo",id+" possui campo sem identificação na posição "+f.start);
+    assert(Array.isArray(f.observations),id+" não possui observações explícitas na posição "+f.start);
+    for(const observation of f.observations){
+      explicitObservations++;
+      assert(observation.manualPage===l.manualPage,id+" possui página de observação divergente na posição "+f.start);
+      if(observation.kind==="note"){
+        noteReferences++;const number=String(observation.note);
+        assert(spec.notes[number],id+" referencia nota inexistente "+number);
+        assert(new RegExp("\\bNOTA\\s*"+number+"\\b","i").test(f.content||""),id+" associa Nota "+number+" sem referência na tabela, posição "+f.start);
+      }
+    }
+  }
+  assert(expectedStart===241,id+" não cobre exatamente as posições 1–240");
+}
+assert(noteReferences===172,"quantidade auditada de referências de notas");
+assert(explicitObservations===425,"quantidade auditada de observações explícitas");
 const lines=p=>fs.readFileSync(p,"latin1").replace(/(?:\r?\n)+$/,"").split(/\r?\n/);
 const valid=lines(path.join(root,"exemplos","valido.rem"));
 assert(valid.length===6,"quantidade do exemplo válido");valid.forEach((l,i)=>assert(l.length===240,`linha válida ${i+1} tem ${l.length}`));
@@ -58,6 +81,8 @@ assert(!/dragenter|dragover|dragleave|dataTransfer/.test(desktopSource),"drag & 
 assert(!streamlitSource.includes("file_uploader"),"Streamlit ainda oferece outro upload");
 assert((desktopSource.match(/<th>Observações<\/th>/g)||[]).length===1,"coluna Observações ausente ou duplicada");
 assert(desktopSource.includes("fieldObservations"),"observações não estão centralizadas");
+assert(desktopSource.includes("f.observations||[]"),"interface não usa observações explícitas por campo");
+assert(!desktopSource.includes("matchAll(/NOTA"),"interface ainda infere notas pelo texto do campo");
 assert(desktopSource.includes('icon:"📖"')&&desktopSource.includes('icon:"📌"')&&desktopSource.includes('icon:"ℹ️"'),"ícones de observação ausentes");
 assert(desktopSource.includes("${esc(f.interpreted)}</td><td>"),"valor interpretado ainda mistura observações");
 console.log("OK — valor interpretado e observações estão em colunas separadas.");

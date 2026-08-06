@@ -10,7 +10,7 @@ Base documental: **Manual Técnico SISPAG Itaú - Layout de Arquivo CNAB 240, ve
 
 1. Dê dois cliques em `iniciar.bat`.
 2. O navegador abrirá em `http://localhost:8765`.
-3. Arraste o arquivo `.rem` ou `.txt` para a tela.
+3. Clique em **Importe seu Arquivo de Remessa** e selecione o arquivo `.rem` ou `.txt`.
 
 Se o Python não estiver instalado, abra diretamente o arquivo `index.html`. A análise também funciona assim, sem servidor.
 
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 streamlit run interface_web.py
 ```
 
-O navegador abrirá a interface Streamlit. Use o upload da página para selecionar o arquivo.
+O navegador abrirá a interface Streamlit. Clique em **Importe seu Arquivo de Remessa** para selecionar o arquivo.
 
 ### Interface desktop no macOS / Linux
 
@@ -63,6 +63,19 @@ Na tabela de campos, a coluna **Interpretado** contém apenas o valor. Notas,
 constantes, preenchimentos fixos, formatos e regras do layout são apresentados
 na coluna **Observações**, usando 📖, 📌 e ℹ️. Os ícones exibem um resumo no
 tooltip e abrem o conteúdo completo no modal.
+
+### Associação auditada das observações
+
+As observações não são inferidas por semelhança de nome ou texto durante a
+execução. Cada nota, caractere fixo, constante ou regra está vinculada
+explicitamente ao layout, à página do manual e às posições inicial e final do
+respectivo campo em `spec.js`. Uma nota só é apresentada quando a tabela oficial
+daquele registro referencia expressamente seu número.
+
+O catálogo das Notas 1 a 42 foi reconstruído na ordem documental para impedir
+que itens numerados dentro de uma nota sejam interpretados como novas notas. O
+resultado verificável da revisão integral está em
+`layouts/observation-audit.json`.
 
 ## Publicação no Streamlit Community Cloud
 
@@ -125,6 +138,7 @@ python tests/smoke_streamlit.py
 - `parser/parser-core.js`: parser e regras de negócio compartilhados;
 - `utils/component_loader.py`: montagem do componente web com caminhos relativos;
 - `spec.js`: layouts estruturados extraídos das tabelas do manual;
+- `layouts/observation-audit.json`: relatório da auditoria posicional de notas e observações;
 - `manual-extraido.txt`: texto integral extraído para auditoria;
 - `exemplos/`: remessas sintéticas;
 - `tests/`: testes automatizados.

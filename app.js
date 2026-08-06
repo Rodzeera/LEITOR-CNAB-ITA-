@@ -34,24 +34,14 @@ function renderRecords(){
   document.querySelectorAll(".record").forEach(x=>x.onclick=()=>{selected=+x.dataset.i;renderRecords();show(selected)});
 }
 function fieldObservations(f){
-  const observations=[],content=String(f.content||"").trim();
-  const noteNumbers=[...content.matchAll(/NOTA\s*(\d+)/gi)].map(m=>m[1]);
-  noteNumbers.forEach(number=>observations.push({
-    icon:"📖",title:`Nota ${number}`,
-    text:S.notes[number]||"Nota referenciada no manual; consulte o documento original."
-  }));
-  if(f.name==="BRANCOS")observations.push({icon:"📌",title:"Preenchimento fixo",text:"Campo reservado: preencher integralmente com espaços em branco."});
-  if(f.name==="ZEROS")observations.push({icon:"📌",title:"Preenchimento fixo",text:"Campo reservado: preencher integralmente com zeros."});
-  const extra=content.replace(/NOTA\s*\d+/gi,"").trim();
-  if(extra){
-    const width=f.end-f.start+1,literal=extra.replace(/^['"]|['"]$/g,"");
-    const equalTokens=[...extra.matchAll(/\b([A-Z0-9]+)\s*=/gi)];
-    const simple=/^[A-Z0-9]+$/i.test(literal)&&literal.length===width&&!/^(DDMMAAAA|HHMMSS)$/i.test(literal);
-    const assigned=equalTokens.length===1&&equalTokens[0][1].length===width;
-    if(simple||assigned)observations.push({icon:"📌",title:"Caractere fixo ou constante",text:`Valor previsto pelo layout: ${extra}.`});
-    else observations.push({icon:"ℹ️",title:"Regra do layout",text:extra});
-  }
-  return observations;
+  return (f.observations||[]).map(observation=>{
+    if(observation.kind==="note"){
+      const number=String(observation.note);
+      return {icon:"📖",title:`Nota ${number}`,text:S.notes[number]||"Nota referenciada no manual oficial."};
+    }
+    if(observation.kind==="fixed")return {icon:"📌",title:observation.title||"Caractere fixo ou constante",text:observation.text};
+    return {icon:"ℹ️",title:observation.title||"Regra do layout",text:observation.text};
+  });
 }
 function observationButton(observation){
   return `<button type="button" class="obs-icon" aria-label="${esc(observation.title)}" title="${esc(observation.title+": "+observation.text)}" data-title="${esc(observation.title)}" data-text="${esc(observation.text)}">${observation.icon}</button>`;
