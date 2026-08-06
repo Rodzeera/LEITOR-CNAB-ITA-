@@ -3,11 +3,11 @@ const S=window.CNAB_SPEC,$=s=>document.querySelector(s),P=window.CNABParser.crea
 let analysis=null,selected=0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-function loadText(text,name){
-  analysis=P.parse(text,name);selected=0;render();
+function loadBytes(bytes,name){
+  analysis=P.parseBytes(bytes,name);selected=0;render();
   $("#drop").hidden=true;$("#workspace").hidden=false;
 }
-function read(file){const rd=new FileReader();rd.onload=()=>loadText(rd.result,file.name);rd.readAsText(file,"ISO-8859-1")}
+async function read(file){loadBytes(await file.arrayBuffer(),file.name)}
 function render(){
   $("#filename").textContent=analysis.name;$("#meta").textContent=`${analysis.records.length} linhas · ${analysis.lots} lotes`;
   const e=analysis.issues.filter(x=>x.severity==="erro").length,w=analysis.issues.filter(x=>x.severity==="aviso").length,ok=analysis.records.filter(r=>!r.issues.length).length;
@@ -42,5 +42,5 @@ function show(i){
 $("#file").onchange=e=>e.target.files[0]&&read(e.target.files[0]);$("#newFile").onclick=()=>$("#file").click();$("#theme").onclick=()=>document.body.classList.toggle("dark");
 ["dragenter","dragover"].forEach(e=>$("#drop").addEventListener(e,x=>{x.preventDefault();$("#drop").classList.add("drag")}));
 ["dragleave","drop"].forEach(e=>$("#drop").addEventListener(e,x=>{x.preventDefault();$("#drop").classList.remove("drag");if(e==="drop"&&x.dataTransfer.files[0])read(x.dataTransfer.files[0])}));
-window.CNAB_UI={loadText,read};
+window.CNAB_UI={loadBytes,read};
 })();

@@ -47,8 +47,7 @@ def build_analyzer_html(file_bytes: bytes, file_name: str) -> str:
       (() => {{
         const binary = atob({json.dumps(encoded)});
         const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-        const text = new TextDecoder("windows-1252").decode(bytes);
-        window.CNAB_UI.loadText(text, {safe_name});
+        window.CNAB_UI.loadBytes(bytes, {safe_name});
       }})();
     </script>
     """

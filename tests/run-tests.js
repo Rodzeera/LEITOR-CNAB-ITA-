@@ -24,6 +24,16 @@ assert(parser.recordIdentity("3","J","segmento_j")==="Segmento J","nome do Segme
 assert(parser.recordIdentity("3","J","segmento_j52")==="Segmento J52","nome do Segmento J52");
 assert(parser.recordIdentity("3","O","segmento_o")==="Segmento O","nome do Segmento O");
 assert(parser.recordIdentity("3","N","segmento_n")==="Segmento N","nome do Segmento N");
+const sampleBytes=fs.readFileSync(path.join(root,"exemplos","valido.rem"));
+const desktopResult=parser.parseBytes(sampleBytes.buffer.slice(sampleBytes.byteOffset,sampleBytes.byteOffset+sampleBytes.byteLength),"valido.rem");
+const transported=Uint8Array.from(Buffer.from(sampleBytes.toString("base64"),"base64"));
+const webResult=parser.parseBytes(transported,"valido.rem");
+assert(JSON.stringify(desktopResult)===JSON.stringify(webResult),"desktop e web divergem para os mesmos bytes");
+const accented=Buffer.from("\uFEFF"+valid.join("\r\n").replace("EMPRESA TESTE","EMPRESA AÇÃO ")+"\r\n","utf8");
+const bomDesktop=parser.parseBytes(accented.buffer.slice(accented.byteOffset,accented.byteOffset+accented.byteLength),"bom.rem");
+const bomWeb=parser.parseBytes(Uint8Array.from(Buffer.from(accented.toString("base64"),"base64")),"bom.rem");
+assert(JSON.stringify(bomDesktop)===JSON.stringify(bomWeb),"desktop e web divergem com BOM UTF-8");
+assert(bomDesktop.records[0].raw.length===240,"BOM alterou as posições do primeiro registro");
 const sourceFiles=[
   path.join(root,"app.js"),
   path.join(root,"parser","parser-core.js"),
@@ -33,5 +43,9 @@ const sourceFiles=[
 const parseDefinitions=sourceFiles.reduce((n,p)=>n+(fs.readFileSync(p,"utf8").match(/function parse\s*\(/g)||[]).length,0);
 assert(parseDefinitions===1,"a lógica do parser deve existir em um único módulo");
 assert(fs.readFileSync(path.join(root,"app.js"),"utf8").includes("CNABParser.create"),"desktop não usa o parser compartilhado");
-assert(fs.readFileSync(path.join(root,"utils","component_loader.py"),"utf8").includes("parser/parser-core.js"),"web não usa o parser compartilhado");
-console.log("OK — desktop e web usam o mesmo parser; 6 linhas, 6 registros e nomes corretos.");
+const desktopSource=fs.readFileSync(path.join(root,"app.js"),"utf8");
+const webSource=fs.readFileSync(path.join(root,"utils","component_loader.py"),"utf8");
+assert(webSource.includes("parser/parser-core.js"),"web não usa o parser compartilhado");
+assert(desktopSource.includes("parseBytes")&&!desktopSource.includes("readAsText"),"desktop não usa o fluxo único de bytes");
+assert(webSource.includes("loadBytes")&&!webSource.includes("TextDecoder"),"web altera o texto antes do parser");
+console.log("OK — desktop e web enviam os mesmos bytes ao mesmo parser, inclusive com BOM.");

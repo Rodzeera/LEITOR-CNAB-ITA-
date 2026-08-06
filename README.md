@@ -46,6 +46,14 @@ As interfaces não possuem cópias das regras de negócio. Ambas carregam o mesm
 O Python da interface web apenas recebe o upload e monta o componente visual; ele não interpreta
 nem altera o CNAB.
 
+### Fluxo único de importação
+
+Os dois seletores de arquivo entregam os bytes originais a
+`CNABParser.parseBytes()`. A detecção de encoding ocorre exclusivamente nesse
+módulo: UTF-8, UTF-16 LE ou UTF-16 BE quando existe BOM e Windows-1252 para
+arquivos CNAB sem BOM. Nenhuma interface converte o arquivo para texto antes da
+análise e o parser é chamado uma única vez.
+
 ## Publicação no Streamlit Community Cloud
 
 1. Envie o conteúdo desta pasta para a raiz de um repositório GitHub.

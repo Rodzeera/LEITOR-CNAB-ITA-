@@ -58,6 +58,6 @@ runpy.run_path(str(ROOT / "interface_web.py"), run_name="__main__")
 
 assert len(rendered) == 1
 assert "CNABParser" in rendered[0]
-assert "CNAB_UI.loadText" in rendered[0]
+assert "CNAB_UI.loadBytes" in rendered[0]
 assert SAMPLE.name in rendered[0]
 print("OK — inicialização Streamlit e upload simulados.")

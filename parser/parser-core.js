@@ -8,6 +8,24 @@
   const int=s=>/^\d+$/.test(s)?Number(s):NaN;
   const issue=(severity,line,start,end,message)=>({severity,line,start,end,message});
 
+  function asBytes(input){
+    if(input instanceof Uint8Array)return input;
+    if(typeof ArrayBuffer!=="undefined"&&input instanceof ArrayBuffer)return new Uint8Array(input);
+    if(typeof ArrayBuffer!=="undefined"&&ArrayBuffer.isView(input))return new Uint8Array(input.buffer,input.byteOffset,input.byteLength);
+    return Uint8Array.from(input||[]);
+  }
+
+  function decodeBytes(input){
+    const bytes=asBytes(input);
+    if(bytes[0]===0xEF&&bytes[1]===0xBB&&bytes[2]===0xBF)
+      return new TextDecoder("utf-8").decode(bytes.subarray(3));
+    if(bytes[0]===0xFF&&bytes[1]===0xFE)
+      return new TextDecoder("utf-16le").decode(bytes.subarray(2));
+    if(bytes[0]===0xFE&&bytes[1]===0xFF)
+      return new TextDecoder("utf-16be").decode(bytes.subarray(2));
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
+
   function splitPhysicalRecords(text){
     const content=String(text??"").replace(/^\uFEFF/,"");
     if(content==="")return[];
@@ -91,7 +109,10 @@
       validateRequired(records,issues);
       return{name,records,issues,lots};
     }
-    return{parse,variant,recordIdentity,splitPhysicalRecords};
+    function parseBytes(bytes,name){
+      return parse(decodeBytes(bytes),name);
+    }
+    return{parse,parseBytes,variant,recordIdentity,splitPhysicalRecords,decodeBytes};
   }
-  return{create,splitPhysicalRecords};
+  return{create,splitPhysicalRecords,decodeBytes};
 });
