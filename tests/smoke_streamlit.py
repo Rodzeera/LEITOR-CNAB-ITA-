@@ -7,16 +7,7 @@ from types import ModuleType
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SAMPLE = ROOT / "exemplos" / "valido.rem"
 rendered: list[str] = []
-
-
-class Uploaded:
-    name = SAMPLE.name
-
-    @staticmethod
-    def getvalue() -> bytes:
-        return SAMPLE.read_bytes()
 
 
 class Sidebar:
@@ -40,7 +31,6 @@ streamlit.set_page_config = lambda *_args, **_kwargs: None
 streamlit.title = lambda *_args, **_kwargs: None
 streamlit.caption = lambda *_args, **_kwargs: None
 streamlit.info = lambda *_args, **_kwargs: None
-streamlit.file_uploader = lambda *_args, **_kwargs: Uploaded()
 
 components_package = ModuleType("streamlit.components")
 components_package.__path__ = []
@@ -58,6 +48,6 @@ runpy.run_path(str(ROOT / "interface_web.py"), run_name="__main__")
 
 assert len(rendered) == 1
 assert "CNABParser" in rendered[0]
-assert "CNAB_UI.loadBytes" in rendered[0]
-assert SAMPLE.name in rendered[0]
-print("OK — inicialização Streamlit e upload simulados.")
+assert rendered[0].count('id="chooseFile"') == 1
+assert 'id="uploadVisual"' in rendered[0] and "disabled" in rendered[0]
+print("OK — Streamlit inicia com um único seletor de arquivo ativo.")

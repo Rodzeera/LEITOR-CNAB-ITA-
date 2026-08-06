@@ -45,7 +45,15 @@ assert(parseDefinitions===1,"a lógica do parser deve existir em um único módu
 assert(fs.readFileSync(path.join(root,"app.js"),"utf8").includes("CNABParser.create"),"desktop não usa o parser compartilhado");
 const desktopSource=fs.readFileSync(path.join(root,"app.js"),"utf8");
 const webSource=fs.readFileSync(path.join(root,"utils","component_loader.py"),"utf8");
+const htmlSource=fs.readFileSync(path.join(root,"index.html"),"utf8");
+const streamlitSource=fs.readFileSync(path.join(root,"interface_web.py"),"utf8");
 assert(webSource.includes("parser/parser-core.js"),"web não usa o parser compartilhado");
 assert(desktopSource.includes("parseBytes")&&!desktopSource.includes("readAsText"),"desktop não usa o fluxo único de bytes");
-assert(webSource.includes("loadBytes")&&!webSource.includes("TextDecoder"),"web altera o texto antes do parser");
-console.log("OK — desktop e web enviam os mesmos bytes ao mesmo parser, inclusive com BOM.");
+assert(!webSource.includes("TextDecoder"),"web altera o texto antes do parser");
+assert(htmlSource.match(/id="chooseFile"/g)?.length===1,"deve existir um único botão de importação");
+assert(htmlSource.includes('id="uploadVisual"')&&htmlSource.includes("disabled"),"controle visual deve estar desabilitado");
+assert(!htmlSource.includes('for="file"'),"label ainda pode abrir o seletor");
+assert((desktopSource.match(/\$\("#file"\)\.click\(\)/g)||[]).length===1,"mais de um evento abre o seletor");
+assert(!/dragenter|dragover|dragleave|dataTransfer/.test(desktopSource),"drag & drop ainda inicia importação");
+assert(!streamlitSource.includes("file_uploader"),"Streamlit ainda oferece outro upload");
+console.log("OK — somente “Importe seu Arquivo de Remessa” abre o seletor.");

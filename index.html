@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Leitor CNAB 240 Itaú</title><link rel="stylesheet" href="styles.css">
+  <title>Leitor CNAB 240 Itaú</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="ux.css">
 </head>
 <body>
 <header><div class="brand"><span class="logo">CNAB</span><div><h1>Leitor CNAB 240 Itaú</h1><p>Manual SISPAG v086 · análise inteiramente local</p></div></div><button id="theme" class="ghost">◐ Tema</button></header>
 <main>
-  <section id="drop" class="drop"><input id="file" type="file" accept=".rem,.txt,text/plain"><div class="drop-icon">⇧</div><h2>Importe seu arquivo de remessa</h2><p>Arraste um .rem ou .txt aqui, ou <label for="file">selecione o arquivo</label></p><small>Nenhum dado sai do seu computador.</small></section>
+  <section id="drop" class="drop"><input id="file" type="file" accept=".rem,.txt,text/plain"><div class="drop-icon">⇧</div><button id="uploadVisual" class="upload-visual" type="button" disabled>Upload CNAB240</button><h2>Analise seu arquivo de remessa</h2><p>Use o botão abaixo para selecionar um arquivo .rem ou .txt.</p><button id="chooseFile" class="primary" type="button">Importe seu Arquivo de Remessa</button><small>Nenhum dado sai do seu computador.</small></section>
   <section id="workspace" hidden>
     <div class="toolbar"><div><strong id="filename"></strong><span id="meta"></span></div><button id="newFile" class="ghost">Trocar arquivo</button></div>
     <div id="stats" class="stats"></div>

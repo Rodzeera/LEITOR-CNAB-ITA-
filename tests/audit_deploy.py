@@ -21,6 +21,7 @@ required = (
     "index.html",
     "app.js",
     "styles.css",
+    "ux.css",
     "spec.js",
     "parser/parser-core.js",
     "utils/component_loader.py",
@@ -67,5 +68,23 @@ require(
     in (ROOT / "app.js").read_text(encoding="utf-8"),
     "A interface desktop não carrega o parser compartilhado",
 )
+
+html = (ROOT / "index.html").read_text(encoding="utf-8")
+desktop_js = (ROOT / "app.js").read_text(encoding="utf-8")
+web_py = (ROOT / "interface_web.py").read_text(encoding="utf-8")
+loader_py = (ROOT / "utils/component_loader.py").read_text(encoding="utf-8")
+require(html.count('id="chooseFile"') == 1, "Botão de importação ausente ou duplicado")
+require('id="uploadVisual"' in html and "disabled" in html, "Elemento inicial não está desabilitado")
+require('for="file"' not in html, "Label ainda abre o seletor de arquivos")
+require(desktop_js.count('$("#file").click()') == 1, "Há mais de um acionador do seletor")
+require('$("#chooseFile").onclick' in desktop_js, "Botão autorizado não abre o seletor")
+require(
+    "dragenter" not in desktop_js
+    and "dragover" not in desktop_js
+    and "dataTransfer" not in desktop_js,
+    "Drag & drop ainda inicia upload",
+)
+require("file_uploader" not in web_py, "Streamlit ainda possui um segundo uploader")
+require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web ainda injeta arquivo")
 
 print("OK — auditoria de deploy concluída.")

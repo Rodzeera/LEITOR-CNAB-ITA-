@@ -54,6 +54,11 @@ módulo: UTF-8, UTF-16 LE ou UTF-16 BE quando existe BOM e Windows-1252 para
 arquivos CNAB sem BOM. Nenhuma interface converte o arquivo para texto antes da
 análise e o parser é chamado uma única vez.
 
+Na interface, apenas o botão **Importe seu Arquivo de Remessa** abre o
+seletor. O controle “Upload CNAB240” é exclusivamente visual e desabilitado.
+Não existem importação por drag & drop, label associado ao input ou uploader
+paralelo do Streamlit.
+
 ## Publicação no Streamlit Community Cloud
 
 1. Envie o conteúdo desta pasta para a raiz de um repositório GitHub.

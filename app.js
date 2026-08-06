@@ -8,6 +8,10 @@ function loadBytes(bytes,name){
   $("#drop").hidden=true;$("#workspace").hidden=false;
 }
 async function read(file){loadBytes(await file.arrayBuffer(),file.name)}
+function resetUpload(){
+  analysis=null;selected=0;$("#file").value="";
+  $("#workspace").hidden=true;$("#drop").hidden=false;
+}
 function render(){
   $("#filename").textContent=analysis.name;$("#meta").textContent=`${analysis.records.length} linhas · ${analysis.lots} lotes`;
   const e=analysis.issues.filter(x=>x.severity==="erro").length,w=analysis.issues.filter(x=>x.severity==="aviso").length,ok=analysis.records.filter(r=>!r.issues.length).length;
@@ -39,8 +43,8 @@ function show(i){
   document.querySelectorAll(".note").forEach(n=>n.onclick=()=>{const t=S.notes[n.dataset.note]||"Nota referenciada no manual; consulte o PDF original.";$("#help h2").textContent="Nota "+n.dataset.note;$("#help p").textContent=t;$("#help").showModal()});
 }
 ["search","lotFilter","segmentFilter","severityFilter","lineFilter"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",renderRecords));
-$("#file").onchange=e=>e.target.files[0]&&read(e.target.files[0]);$("#newFile").onclick=()=>$("#file").click();$("#theme").onclick=()=>document.body.classList.toggle("dark");
-["dragenter","dragover"].forEach(e=>$("#drop").addEventListener(e,x=>{x.preventDefault();$("#drop").classList.add("drag")}));
-["dragleave","drop"].forEach(e=>$("#drop").addEventListener(e,x=>{x.preventDefault();$("#drop").classList.remove("drag");if(e==="drop"&&x.dataTransfer.files[0])read(x.dataTransfer.files[0])}));
+$("#chooseFile").onclick=()=>$("#file").click();
+$("#file").onchange=e=>e.target.files[0]&&read(e.target.files[0]);
+$("#newFile").onclick=resetUpload;$("#theme").onclick=()=>document.body.classList.toggle("dark");
 window.CNAB_UI={loadBytes,read};
 })();

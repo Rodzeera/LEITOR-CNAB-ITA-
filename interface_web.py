@@ -34,16 +34,8 @@ if module == "🏦 CNAB240 Analyzer":
         "Importe um arquivo .REM ou .TXT. O processamento utiliza o mesmo "
         "parser da versão desktop."
     )
-    uploaded = st.file_uploader(
-        "Arquivo CNAB240",
-        type=("rem", "txt"),
-        help="O arquivo é processado durante esta sessão e não é gravado em disco.",
-    )
-    if uploaded is None:
-        st.info("Selecione um arquivo para iniciar a análise.")
-    else:
-        html = build_analyzer_html(uploaded.getvalue(), uploaded.name)
-        components.html(html, height=1050, scrolling=True)
+    html = build_analyzer_html()
+    components.html(html, height=1050, scrolling=True)
 elif module == "⚙ Configurações":
     st.title("⚙ Configurações")
     st.info("As configurações adicionais serão disponibilizadas em uma versão futura.")
