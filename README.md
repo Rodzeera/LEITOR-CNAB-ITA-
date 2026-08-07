@@ -108,6 +108,14 @@ esperada pelo Community Cloud.
 - total de registros por lote;
 - quantidade de lotes e registros no trailer do arquivo;
 - presença de segmentos principais conforme a forma de pagamento, incluindo A/B para PIX Transferência, J/J-52 para boletos, O para concessionárias e N para tributos.
+- regras da Nota 35 para Câmara e ISPB, diferenciando TED para Conta Pagamento,
+  TED para Corretora, PIX Transferência e pagamentos nos quais esses campos não
+  se aplicam. A validação cruza os ISPBs dos Segmentos A e B pelo mesmo lote e
+  número de registro e informa qual valor prevalece quando necessário.
+
+Para a Nota 35, um ISPB é considerado estruturalmente válido quando contém oito
+dígitos e não é `00000000`. A lista oficial de participantes do STR não é
+consultada externamente, mantendo o processamento local e independente de rede.
 
 Cada linha física é lida uma única vez. São aceitas terminações de linha Windows (CRLF), Linux/macOS (LF) e legadas (CR); a quebra final apenas encerra o último registro e não cria um registro vazio artificial.
 
@@ -142,6 +150,7 @@ python tests/smoke_streamlit.py
 - `index.html`, `styles.css`, `app.js`: aplicação;
 - `interface_web.py`: entrada da interface Streamlit;
 - `parser/parser-core.js`: parser e regras de negócio compartilhados;
+- `parser/note35-validator.js`: validação centralizada e cruzada de Câmara/ISPB;
 - `utils/component_loader.py`: montagem do componente web com caminhos relativos;
 - `spec.js`: layouts estruturados extraídos das tabelas do manual;
 - `layouts/observation-audit.json`: relatório da auditoria posicional de notas e observações;

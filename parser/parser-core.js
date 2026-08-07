@@ -1,8 +1,9 @@
 (function(root,factory){
-  const api=factory();
+  const note35=typeof module==="object"&&module.exports?require("./note35-validator.js"):root.CNABNote35Validator;
+  const api=factory(note35);
   if(typeof module==="object"&&module.exports)module.exports=api;
   else root.CNABParser=api;
-})(typeof globalThis!=="undefined"?globalThis:this,function(){
+})(typeof globalThis!=="undefined"?globalThis:this,function(note35){
   "use strict";
   const slice=(line,a,b)=>line.slice(a-1,b);
   const int=s=>/^\d+$/.test(s)?Number(s):NaN;
@@ -42,7 +43,7 @@
       if(type==="1"){const form=line.slice(11,13);return["30","31"].includes(form)?"header_lote_j":form==="11"?"header_lote_o":form==="22"?"header_lote_n":"header_lote_a"}
       if(type==="5")return ctx.family==="j"?"trailer_lote_j":ctx.family==="o"?"trailer_lote_o":ctx.family==="n"?"trailer_lote_n":"trailer_lote_a";
       if(type!=="3")return null;
-      if(seg==="A")return ctx.form==="45"?"segmento_a_pix":"segmento_a";
+      if(seg==="A")return"segmento_a";
       if(seg==="J"){const code=line.slice(17,19);return code==="52"?(line.slice(19,20)==="P"?"segmento_j52_pix":"segmento_j52"):"segmento_j"}
       if(seg==="B")return ctx.family==="j"?"segmento_b_boleto":ctx.family==="n"?"segmento_b_n":ctx.form==="45"?"segmento_b_pix":"segmento_b";
       if(seg==="C")return ctx.family==="j"?"segmento_c_boleto":"segmento_c";
@@ -107,6 +108,7 @@
       if(last?.type!=="9")issues.push(issue("erro",last?.line||1,8,8,"O último registro deve ser Trailer de Arquivo (tipo 9)."));
       if(last?.type==="9"){const dl=int(last.raw.slice(17,23)),dr=int(last.raw.slice(23,29));if(dl!==lots)issues.push(issue("erro",last.line,18,23,`Quantidade de lotes divergente: informada ${dl}, calculada ${lots}.`));if(dr!==records.length)issues.push(issue("erro",last.line,24,29,`Quantidade de registros divergente: informada ${dr}, calculada ${records.length}.`))}
       validateRequired(records,issues);
+      note35?.validate(records,issues);
       return{name,records,issues,lots};
     }
     function parseBytes(bytes,name){

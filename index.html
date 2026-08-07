@@ -15,7 +15,7 @@
       <input id="search" placeholder="Buscar campo, valor ou mensagem…">
       <select id="lotFilter"><option value="">Todos os lotes</option></select>
       <select id="segmentFilter"><option value="">Todos os segmentos</option></select>
-      <select id="severityFilter"><option value="">Todas as severidades</option><option value="erro">Erros</option><option value="aviso">Avisos</option></select>
+      <select id="severityFilter"><option value="">Todas as severidades</option><option value="erro">Erros</option><option value="aviso">Avisos</option><option value="informacao">Informações</option></select>
       <select id="lineFilter"><option value="">Todas as linhas</option></select>
     </div>
     <div class="grid">
@@ -26,5 +26,5 @@
 </main>
 <dialog id="help"><button class="close" onclick="this.closest('dialog').close()">×</button><h2>Sobre a validação</h2><p>Os layouts e a terminologia vêm do Manual Técnico SISPAG Itaú CNAB 240 v086 (05/05/2022). Validações condicionais dependem da forma de pagamento informada no header do lote.</p></dialog>
 <button class="help" onclick="document.querySelector('#help').showModal()">?</button>
-<script src="spec.js"></script><script src="parser/parser-core.js"></script><script src="app.js"></script>
+<script src="spec.js"></script><script src="parser/note35-validator.js"></script><script src="parser/parser-core.js"></script><script src="app.js"></script>
 </body></html>

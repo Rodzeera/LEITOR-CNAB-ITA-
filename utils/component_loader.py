@@ -16,6 +16,7 @@ def build_analyzer_html() -> str:
     styles = _read("styles.css")
     ux_styles = _read("ux.css")
     spec = _read("spec.js")
+    note35_validator = _read("parser/note35-validator.js")
     parser = _read("parser/parser-core.js")
     interface = _read("app.js")
 
@@ -28,6 +29,10 @@ def build_analyzer_html() -> str:
         f"<style>{ux_styles}</style>",
     )
     html = html.replace('<script src="spec.js"></script>', f"<script>{spec}</script>")
+    html = html.replace(
+        '<script src="parser/note35-validator.js"></script>',
+        f"<script>{note35_validator}</script>",
+    )
     html = html.replace(
         '<script src="parser/parser-core.js"></script>',
         f"<script>{parser}</script>",

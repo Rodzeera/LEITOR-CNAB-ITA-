@@ -24,6 +24,7 @@ required = (
     "styles.css",
     "ux.css",
     "spec.js",
+    "parser/note35-validator.js",
     "parser/parser-core.js",
     "layouts/observation-audit.json",
     "utils/component_loader.py",
@@ -64,6 +65,11 @@ require(
     "parser/parser-core.js"
     in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
     "A interface web não carrega o parser compartilhado",
+)
+require(
+    "parser/note35-validator.js"
+    in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
+    "A interface web não carrega o validador compartilhado da Nota 35",
 )
 require(
     "CNABParser.create"
@@ -134,6 +140,12 @@ require(
 )
 require("file_uploader" not in web_py, "Streamlit ainda possui um segundo uploader")
 require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web ainda injeta arquivo")
+require('value="informacao"' in html, "Filtro de informações da Nota 35 ausente")
+require('src="parser/note35-validator.js"' in html, "Validador da Nota 35 ausente no desktop")
+require(
+    "note35?.validate(records,issues)" in (ROOT / "parser/parser-core.js").read_text(encoding="utf-8"),
+    "Parser não executa o validador central da Nota 35",
+)
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
 require("<th>Picture</th>" not in desktop_js, "A coluna Picture ainda está visível")
 require(desktop_js.count("<th>Tipo</th>") == 1, "Coluna Tipo ausente ou duplicada")
