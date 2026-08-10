@@ -108,10 +108,11 @@ esperada pelo Community Cloud.
 - total de registros por lote;
 - quantidade de lotes e registros no trailer do arquivo;
 - presença de segmentos principais conforme a forma de pagamento, incluindo A/B para PIX Transferência, J/J-52 para boletos, O para concessionárias e N para tributos.
-- regras da Nota 35 para Câmara e ISPB, diferenciando TED para Conta Pagamento,
-  TED para Corretora, PIX Transferência e pagamentos nos quais esses campos não
-  se aplicam. A validação cruza os ISPBs dos Segmentos A e B pelo mesmo lote e
-  número de registro e informa qual valor prevalece quando necessário.
+- validação isolada da Nota 35: Câmara `009` exclusivamente para PIX
+  Transferência (forma 45) e Câmara `888` mais ISPB válido exclusivamente para
+  TED Corretora (forma 41/43 com finalidade `00011`). TEDs com outra finalidade
+  e demais formas não recebem novas ocorrências. Os ISPBs dos Segmentos A e B
+  são associados pelo mesmo lote e número de registro.
 
 Para a Nota 35, um ISPB é considerado estruturalmente válido quando contém oito
 dígitos e não é `00000000`. A lista oficial de participantes do STR não é
