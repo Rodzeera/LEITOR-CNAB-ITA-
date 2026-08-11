@@ -29,6 +29,7 @@ required = (
     "core/reader.js",
     "core/registry.js",
     "core/analyzer.js",
+    "core/tax-id.js",
     "banks/base.js",
     "banks/itau/bank.js",
     "banks/itau/versions/v086.js",
@@ -157,6 +158,7 @@ require(
 )
 require('src="core/analyzer.js"' in html, "Analisador bancário ausente no desktop")
 require("core/analyzer.js" in loader_py, "Analisador bancário ausente no Streamlit")
+require("core/tax-id.js" in loader_py, "Validador comum de CPF/CNPJ ausente no Streamlit")
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
 require("<th>Picture</th>" not in desktop_js, "A coluna Picture ainda está visível")
 require(desktop_js.count("<th>Tipo</th>") == 1, "Coluna Tipo ausente ou duplicada")

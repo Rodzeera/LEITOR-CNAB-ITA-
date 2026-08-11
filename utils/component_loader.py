@@ -6,7 +6,7 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 SCRIPT_ASSETS = (
-    "core/reader.js", "core/utils.js", "core/occurrences.js", "core/models.js", "core/validator.js",
+    "core/reader.js", "core/utils.js", "core/occurrences.js", "core/models.js", "core/validator.js", "core/tax-id.js",
     "banks/base.js",
     "banks/itau/config.js", "banks/itau/constants.js", "banks/itau/versions/v086.js",
     "banks/itau/layouts.js", "banks/itau/fields.js", "banks/itau/notes.js",

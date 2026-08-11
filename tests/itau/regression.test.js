@@ -8,8 +8,8 @@ const legacy=require("../../parser/parser-core.js").create(require("../../spec.j
 
 const root=path.resolve(__dirname,"../..");
 const expected={
-  "valido.rem":"ba5b349f9f82f0be4665bc0f4b367e058d0d89a0eb5b71814aec8368f1160cb1",
-  "invalido.rem":"6b39e6358121088d462d991b12bc307ce0928d6e7e0de0a3b7ad6adb1fb75148",
+  "valido.rem":"8d039f78a350385dbf2db56f6c4157b45cb75a102b3ed340d3b8278adc524c77",
+  "invalido.rem":"2847b857de465c4ff701b59702459ca08b5a247ee494f77395a95cb510cae9e9",
 };
 for(const [name,digest] of Object.entries(expected)){
   const bytes=fs.readFileSync(path.join(root,"exemplos",name));

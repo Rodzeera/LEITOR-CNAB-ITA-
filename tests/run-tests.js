@@ -136,7 +136,9 @@ assert(desktopSource.includes('icon:"📖"')&&desktopSource.includes('icon:"📌
 assert(desktopSource.includes("${esc(f.interpreted)}</td><td>"),"valor interpretado ainda mistura observações");
 console.log("OK — regras isoladas da Nota 35 validadas sem alterar parser ou identificação de registros.");
 require("./core/reader.test.js");
+require("./core/tax-id.test.js");
 require("./core/registry.test.js");
 require("./itau/regression.test.js");
+require("./itau/tax-id-validation.test.js");
 require("./santander/not-implemented.test.js");
 require("./bradesco/not-implemented.test.js");

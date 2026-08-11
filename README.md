@@ -114,6 +114,10 @@ esperada pelo Community Cloud.
   TED Corretora (forma 41/43 com finalidade `00011`). TEDs com outra finalidade
   e demais formas não recebem novas ocorrências. Os ISPBs dos Segmentos A e B
   são associados pelo mesmo lote e número de registro.
+- validação matemática de CPF/CNPJ, com dígitos verificadores, coerência entre
+  tipo de inscrição e número, preenchimento físico com zeros à esquerda e
+  respeito à opcionalidade definida pelo layout. O utilitário matemático é
+  comum, mas somente o módulo Itaú decide quais posições são aplicáveis.
 
 Para a Nota 35, um ISPB é considerado estruturalmente válido quando contém oito
 dígitos e não é `00000000`. A lista oficial de participantes do STR não é
@@ -138,7 +142,7 @@ A pasta `exemplos` contém:
 - `valido.rem`: estrutura sintética consistente;
 - `invalido.rem`: erros propositais de tamanho, banco, data, tipo de campo, sequência e totais.
 
-Execute `testar.bat` no Windows ou `node tests/run-tests.js` em qualquer ambiente com Node.js. O teste confere a integridade da especificação, os 240 caracteres do arquivo válido, os defeitos esperados do inválido e a sintaxe dos scripts.
+Execute `testar.bat` no Windows ou `node tests/run-tests.js` em qualquer ambiente com Node.js. O teste confere a integridade da especificação, os 240 caracteres do arquivo válido, os defeitos esperados do inválido, a sintaxe dos scripts e os 13 cenários obrigatórios de CPF/CNPJ.
 
 Auditoria adicional para publicação:
 
@@ -153,6 +157,7 @@ python tests/smoke_streamlit.py
 - `interface_web.py`: entrada da interface Streamlit;
 - `core/reader.js`: leitura física e codificação;
 - `core/models.js`, `core/occurrences.js`, `core/validator.js`, `core/utils.js`: infraestrutura comum;
+- `core/tax-id.js`: cálculo reutilizável dos dígitos verificadores de CPF/CNPJ;
 - `core/registry.js`: cadastro central de bancos;
 - `core/analyzer.js`: identificação automática e despacho para o módulo correto;
 - `banks/base.js`: contrato comum obrigatório para todos os bancos;

@@ -1,9 +1,11 @@
 (function(root,factory){
-  const occurrences=typeof module==="object"&&module.exports?require("../../core/occurrences.js"):root.CNABCoreOccurrences;
-  const api=factory(occurrences);
+  const isNode=typeof module==="object"&&module.exports;
+  const occurrences=isNode?require("../../core/occurrences.js"):root.CNABCoreOccurrences;
+  const taxId=isNode?require("../../core/tax-id.js"):root.CNABCoreTaxId;
+  const api=factory(occurrences,taxId);
   if(typeof module==="object"&&module.exports)module.exports=api;
   else root.CNABBankModules.itau.validations=api;
-})(typeof globalThis!=="undefined"?globalThis:this,function(occurrences){
+})(typeof globalThis!=="undefined"?globalThis:this,function(occurrences,taxId){
   "use strict";
   const issue=occurrences.create;
   const value=(raw,start,end)=>String(raw||"").slice(start-1,end);
@@ -11,6 +13,25 @@
   const isValidIspb=raw=>/^\d{8}$/.test(String(raw??""))&&String(raw)!=="00000000";
   const PAYMENT_TYPES={"10":"Dividendos","15":"Debêntures","20":"Fornecedores","22":"Tributos","30":"Salários","40":"Fundos de investimentos","50":"Sinistros de seguros","60":"Despesas de viajante em trânsito","80":"Representantes autorizados","90":"Benefícios","98":"Diversos"};
   const PAYMENT_FORMS={"41":"TED - outro titular","43":"TED - mesmo titular","45":"PIX Transferência"};
+  const TAX_ID_PAIR_RULES=Object.freeze({
+    header_arquivo:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:true}],
+    header_lote_a:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:true}],
+    header_lote_j:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:true}],
+    header_lote_o:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:true}],
+    header_lote_n:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:true}],
+    segmento_b:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:false}],
+    segmento_b_pix:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:false}],
+    segmento_b_boleto:[{typeStart:18,typeEnd:18,numberStart:19,numberEnd:32,required:false}],
+    segmento_j52:[
+      {typeStart:20,typeEnd:20,numberStart:21,numberEnd:35,required:false},
+      {typeStart:76,typeEnd:76,numberStart:77,numberEnd:91,required:true},
+      {typeStart:132,typeEnd:132,numberStart:133,numberEnd:147,required:false},
+    ],
+    segmento_j52_pix:[
+      {typeStart:20,typeEnd:20,numberStart:21,numberEnd:35,required:false},
+      {typeStart:76,typeEnd:76,numberStart:77,numberEnd:91,required:true},
+    ],
+  });
 
   function fieldIssues(field,rawValue,lineNumber){
     const out=[],numeric=/^9/.test(field.picture),alpha=/^X/.test(field.picture);
@@ -55,9 +76,67 @@
     }
   }
 
+  function recordContext(record){
+    const sequence=record.type==="3"?value(record.raw,9,13).trim():"não aplicável";
+    return`registro: ${record.title}; segmento: ${record.seg||"não aplicável"}; lote: ${record.lot||"não informado"}; número do registro: ${sequence||"não informado"}`;
+  }
+
+  function fieldName(record,start,end){
+    return record.fields.find(field=>field.start===start&&field.end===end)?.name||"NÚMERO DE INSCRIÇÃO";
+  }
+
+  function addTaxIdIssue(record,allIssues,start,end,message){
+    if(record.issues.some(existing=>existing.start===start&&existing.end===end&&/esperado campo numérico/i.test(existing.message)))return;
+    const occurrence=issue("erro",record.line,start,end,message,{rule:"CPF_CNPJ"});
+    record.issues.push(occurrence);allIssues.push(occurrence);
+    const field=record.fields.find(candidate=>candidate.start===start&&candidate.end===end);
+    if(field&&!field.issues.includes(occurrence))field.issues.push(occurrence);
+  }
+
+  function taxIdMessage(record,rule,typeRaw,raw,result){
+    const expected=result.expectedType||result.actualType||"CPF/CNPJ",typeLabel=typeRaw==="1"?"1 - CPF":typeRaw==="2"?"2 - CNPJ":typeRaw||"não informado";
+    const base=`Campo: ${fieldName(record,rule.numberStart,rule.numberEnd)}; ${recordContext(record)}; posições: ${rule.numberStart}–${rule.numberEnd}; tipo informado: ${typeLabel}; valor encontrado: ${shown(raw)}`;
+    if(result.code==="type_mismatch")return`Tipo de inscrição incompatível com o número informado. ${base}; documento identificado como: ${result.actualType}; motivo: o número possui estrutura e dígitos verificadores de ${result.actualType}, mas o tipo informado exige ${expected}.`;
+    const reasons={non_numeric:"conteúdo não numérico",invalid_length:`quantidade de dígitos incompatível com ${expected}`,invalid_padding:`preenchimento físico incompatível com ${expected}`,invalid_check_digits:"dígitos verificadores inválidos"};
+    return`${expected} inválido. ${base}; motivo: ${reasons[result.code]||"documento inconsistente"}.`;
+  }
+
+  function validateTaxIdPair(record,rule,allIssues){
+    const typeRaw=value(record.raw,rule.typeStart,rule.typeEnd),numberRaw=value(record.raw,rule.numberStart,rule.numberEnd);
+    if(!rule.required&&taxId.isEmpty(typeRaw)&&taxId.isEmpty(numberRaw))return;
+    if(typeRaw!=="1"&&typeRaw!=="2"){
+      addTaxIdIssue(record,allIssues,rule.typeStart,rule.typeEnd,`Tipo de inscrição inválido. Campo: ${fieldName(record,rule.typeStart,rule.typeEnd)}; ${recordContext(record)}; posição: ${rule.typeStart}; valor encontrado: ${shown(typeRaw)}; esperado: 1 - CPF ou 2 - CNPJ.`);
+      return;
+    }
+    const expectedType=typeRaw==="1"?taxId.CPF:taxId.CNPJ,result=taxId.inspect(numberRaw,expectedType);
+    if(!result.valid)addTaxIdIssue(record,allIssues,rule.numberStart,rule.numberEnd,taxIdMessage(record,rule,typeRaw,numberRaw,result));
+  }
+
+  function validateStandaloneTaxId(record,allIssues,start,end,expectedType=null){
+    const raw=value(record.raw,start,end);if(taxId.isEmpty(raw))return;
+    const result=expectedType?taxId.inspect(raw,expectedType):taxId.detect(raw);
+    if(result.valid)return;
+    const rule={numberStart:start,numberEnd:end},typeRaw=expectedType===taxId.CPF?"1":expectedType===taxId.CNPJ?"2":"";
+    const normalized=expectedType?result:{...result,expectedType:result.actualType||"CPF/CNPJ"};
+    addTaxIdIssue(record,allIssues,start,end,taxIdMessage(record,rule,typeRaw,raw,normalized));
+  }
+
+  function validateTaxIds(records,allIssues){
+    for(const record of records){
+      for(const rule of TAX_ID_PAIR_RULES[record.key]||[])validateTaxIdPair(record,rule,allIssues);
+      if(record.key==="segmento_a")validateStandaloneTaxId(record,allIssues,204,217);
+      if(record.key==="segmento_a_pix"){
+        const identificationType=value(record.raw,218,218);
+        if(identificationType==="3")validateStandaloneTaxId(record,allIssues,178,191,taxId.CNPJ);
+        if(identificationType==="1")validateStandaloneTaxId(record,allIssues,204,217,taxId.CNPJ);
+        else validateStandaloneTaxId(record,allIssues,204,217);
+      }
+    }
+  }
+
   const validateRecord=fieldIssues;
   const validatePayment=validateNote35;
   const validateLot=()=>[];
-  function validateFile(records,issues){validateRequired(records,issues);validateNote35(records,issues)}
-  return{fieldIssues,validateRequired,validateNote35,isValidIspb,paymentContext,validateRecord,validatePayment,validateLot,validateFile};
+  function validateFile(records,issues){validateRequired(records,issues);validateNote35(records,issues);validateTaxIds(records,issues)}
+  return{fieldIssues,validateRequired,validateNote35,validateTaxIds,isValidIspb,paymentContext,validateRecord,validatePayment,validateLot,validateFile,TAX_ID_PAIR_RULES};
 });
