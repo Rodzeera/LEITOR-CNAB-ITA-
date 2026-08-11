@@ -112,6 +112,10 @@ assert(htmlSource.includes('src="parser/note35-validator.js"'),"desktop não usa
 assert(htmlSource.includes('value="informacao"'),"filtro de informações ausente");
 assert(desktopSource.includes("analyzeBytes")&&!desktopSource.includes("readAsText"),"desktop não usa o fluxo único de bytes");
 assert(!webSource.includes("TextDecoder"),"web altera o texto antes do parser");
+assert(desktopSource.includes('$("#file").onchange=async'),"evento change não aguarda o processamento assíncrono");
+assert(desktopSource.includes("catch(error){showUploadError(error)}"),"falha do upload ainda pode ficar silenciosa");
+assert(desktopSource.includes("requireAnalyzer"),"inicialização não verifica o motor CNAB240");
+assert(webSource.includes("if '<script src=' in html"),"Streamlit não bloqueia scripts externos não incorporados");
 assert(htmlSource.match(/id="chooseFile"/g)?.length===1,"deve existir um único botão de importação");
 assert(htmlSource.includes('id="uploadVisual"')&&htmlSource.includes("disabled"),"controle visual deve estar desabilitado");
 assert(!htmlSource.includes('for="file"'),"label ainda pode abrir o seletor");

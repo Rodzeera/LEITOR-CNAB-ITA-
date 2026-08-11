@@ -10,6 +10,7 @@
 })(typeof globalThis!=="undefined"?globalThis:this,function(reader,occurrences,registry){
   "use strict";
   const issue=occurrences.create;
+  const flowLog=(stage,message)=>{if(typeof window!=="undefined")console.info(`[${stage}] ${message}`)};
 
   function physicalResult(name,lines,severity,message){
     const records=lines.map((raw,index)=>{
@@ -23,8 +24,10 @@
   function analyzeBytes(input,name){
     const source=reader.readBytes(input);
     if(!source.lines.length)return physicalResult(name,[],"erro","Arquivo vazio: nenhum registro físico encontrado.");
+    flowLog("BANK",`código identificado: ${source.bankCode||"não informado"}`);
     const bank=registry.get(source.bankCode);
     if(!bank)return physicalResult(name,source.lines,"erro",`Código bancário ${source.bankCode||"não informado"} não possui módulo cadastrado.`);
+    flowLog("REGISTRY",`módulo selecionado: ${bank.bankName}`);
     if(bank.status!=="active")return physicalResult(name,source.lines,"informacao",`Banco ${bank.bankName} identificado. Validador CNAB240 ${bank.bankName} ainda não implementado.`);
     return bank.analyzeBytes(input,name);
   }

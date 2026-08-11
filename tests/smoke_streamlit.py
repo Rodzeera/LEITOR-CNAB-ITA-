@@ -49,6 +49,12 @@ runpy.run_path(str(ROOT / "interface_web.py"), run_name="__main__")
 assert len(rendered) == 1
 assert "CNABAnalyzer" in rendered[0]
 assert "CNABBankRegistry" in rendered[0]
+assert '<script src=' not in rendered[0]
+assert rendered[0].index("root.CNABCoreReader=api") < rendered[0].index("root.CNABBankRegistry=api")
+assert rendered[0].index("root.CNABBankRegistry=api") < rendered[0].index("root.CNABAnalyzer=api")
+assert rendered[0].index("root.CNABAnalyzer=api") < rendered[0].index("const $=s=>document.querySelector(s),analyzer=()=>window.CNABAnalyzer")
+assert "Falha no processamento do arquivo" in rendered[0]
+assert "onchange=async" in rendered[0]
 assert rendered[0].count('id="chooseFile"') == 1
 assert 'id="uploadVisual"' in rendered[0] and "disabled" in rendered[0]
 print("OK — Streamlit inicia com um único seletor de arquivo ativo.")

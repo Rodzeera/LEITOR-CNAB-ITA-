@@ -17,12 +17,14 @@
   "use strict";
   const integer=utils.integer;
   const issue=occurrences.create;
+  const flowLog=(stage,message)=>{if(typeof window!=="undefined")console.info(`[${stage}] ${message}`)};
 
   function create(definition){
     const spec=definition||layouts.getDefinition(config.defaultVersion);
 
     function parse(text,name){
       const rawLines=reader.splitPhysicalRecords(text),records=[],issues=[];
+      flowLog("PARSER",`processamento iniciado: ${rawLines.length} registro(s) físico(s)`);
       let ctx={family:"a",form:"",lot:""},lotStart=-1,seqExpected=1,lots=0;
       rawLines.forEach((line,index)=>{
         const lineNumber=index+1,type=line[7]||"",lot=line.slice(3,7),segment=type==="3"?(line[13]||""):"",local=[];
@@ -68,7 +70,9 @@
         if(declaredLots!==lots)issues.push(issue("erro",last.line,18,23,`Quantidade de lotes divergente: informada ${declaredLots}, calculada ${lots}.`));
         if(declaredRecords!==records.length)issues.push(issue("erro",last.line,24,29,`Quantidade de registros divergente: informada ${declaredRecords}, calculada ${records.length}.`));
       }
+      flowLog("PARSER",`${records.length} registro(s) processado(s)`);
       validations.validateFile(records,issues);
+      flowLog("VALIDATOR",`validações concluídas: ${issues.length} ocorrência(s)`);
       return{name,records,issues,lots};
     }
 

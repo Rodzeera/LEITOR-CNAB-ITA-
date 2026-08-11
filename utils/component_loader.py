@@ -40,9 +40,16 @@ def build_analyzer_html() -> str:
         f"<style>{ux_styles}</style>",
     )
     for asset in SCRIPT_ASSETS:
-        html = html.replace(
-            f'<script src="{asset}"></script>',
-            f"<script>{_read(asset)}</script>",
+        script_tag = f'<script src="{asset}"></script>'
+        if html.count(script_tag) != 1:
+            raise RuntimeError(
+                f"Asset obrigatório ausente ou duplicado no HTML: {asset}"
+            )
+        html = html.replace(script_tag, f"<script>{_read(asset)}</script>", 1)
+
+    if '<script src=' in html:
+        raise RuntimeError(
+            "O componente Streamlit contém scripts externos não incorporados."
         )
 
     return html
