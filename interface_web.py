@@ -26,10 +26,10 @@ module = st.sidebar.radio(
     label_visibility="collapsed",
 )
 st.sidebar.divider()
-st.sidebar.caption("Manual SISPAG Itaú CNAB 240 · versão 086")
+st.sidebar.caption("CNAB240 · identificação automática do banco")
 
 if module == "🏦 CNAB240 Analyzer":
-    st.title("🧪 CNAB240 Analyzer - TESTE")
+    st.title("🏦 CNAB240 Analyzer")
     st.caption(
         "Importe um arquivo .REM ou .TXT. O processamento utiliza o mesmo "
         "parser da versão desktop."

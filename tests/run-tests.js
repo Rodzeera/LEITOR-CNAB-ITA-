@@ -1,7 +1,6 @@
-const fs=require("fs"),vm=require("vm"),path=require("path"),cp=require("child_process");
-const root=path.resolve(__dirname,".."),ctx={window:{}};vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(root,"spec.js"),"utf8"),ctx);
-const spec=ctx.window.CNAB_SPEC, assert=(x,m)=>{if(!x)throw Error(m)};
+const fs=require("fs"),path=require("path"),cp=require("child_process");
+const root=path.resolve(__dirname,"..");
+const spec=require(path.join(root,"spec.js")),assert=(x,m)=>{if(!x)throw Error(m)};
 assert(spec.manual.version==="086","versão do manual");
 assert(Object.keys(spec.layouts).length>=30,"famílias de layout");
 assert(Object.keys(spec.notes).length===42,"catálogo completo das notas 1 a 42");
@@ -96,12 +95,13 @@ assert(bomDesktop.records[0].raw.length===240,"BOM alterou as posições do prim
 const sourceFiles=[
   path.join(root,"app.js"),
   path.join(root,"parser","parser-core.js"),
+  path.join(root,"banks","itau","bank.js"),
   path.join(root,"interface_web.py"),
   path.join(root,"utils","component_loader.py"),
 ];
 const parseDefinitions=sourceFiles.reduce((n,p)=>n+(fs.readFileSync(p,"utf8").match(/function parse\s*\(/g)||[]).length,0);
 assert(parseDefinitions===1,"a lógica do parser deve existir em um único módulo");
-assert(fs.readFileSync(path.join(root,"app.js"),"utf8").includes("CNABParser.create"),"desktop não usa o parser compartilhado");
+assert(fs.readFileSync(path.join(root,"app.js"),"utf8").includes("CNABAnalyzer"),"desktop não usa o analisador compartilhado");
 const desktopSource=fs.readFileSync(path.join(root,"app.js"),"utf8");
 const webSource=fs.readFileSync(path.join(root,"utils","component_loader.py"),"utf8");
 const htmlSource=fs.readFileSync(path.join(root,"index.html"),"utf8");
@@ -110,7 +110,7 @@ assert(webSource.includes("parser/parser-core.js"),"web não usa o parser compar
 assert(webSource.includes("parser/note35-validator.js"),"web não usa o validador compartilhado da Nota 35");
 assert(htmlSource.includes('src="parser/note35-validator.js"'),"desktop não usa o validador compartilhado da Nota 35");
 assert(htmlSource.includes('value="informacao"'),"filtro de informações ausente");
-assert(desktopSource.includes("parseBytes")&&!desktopSource.includes("readAsText"),"desktop não usa o fluxo único de bytes");
+assert(desktopSource.includes("analyzeBytes")&&!desktopSource.includes("readAsText"),"desktop não usa o fluxo único de bytes");
 assert(!webSource.includes("TextDecoder"),"web altera o texto antes do parser");
 assert(htmlSource.match(/id="chooseFile"/g)?.length===1,"deve existir um único botão de importação");
 assert(htmlSource.includes('id="uploadVisual"')&&htmlSource.includes("disabled"),"controle visual deve estar desabilitado");
@@ -131,3 +131,8 @@ assert(!desktopSource.includes("matchAll(/NOTA"),"interface ainda infere notas p
 assert(desktopSource.includes('icon:"📖"')&&desktopSource.includes('icon:"📌"')&&desktopSource.includes('icon:"ℹ️"'),"ícones de observação ausentes");
 assert(desktopSource.includes("${esc(f.interpreted)}</td><td>"),"valor interpretado ainda mistura observações");
 console.log("OK — regras isoladas da Nota 35 validadas sem alterar parser ou identificação de registros.");
+require("./core/reader.test.js");
+require("./core/registry.test.js");
+require("./itau/regression.test.js");
+require("./santander/not-implemented.test.js");
+require("./bradesco/not-implemented.test.js");

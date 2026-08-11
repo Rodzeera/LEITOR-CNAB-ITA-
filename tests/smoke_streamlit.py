@@ -47,7 +47,8 @@ sys.path.insert(0, str(ROOT))
 runpy.run_path(str(ROOT / "interface_web.py"), run_name="__main__")
 
 assert len(rendered) == 1
-assert "CNABParser" in rendered[0]
+assert "CNABAnalyzer" in rendered[0]
+assert "CNABBankRegistry" in rendered[0]
 assert rendered[0].count('id="chooseFile"') == 1
 assert 'id="uploadVisual"' in rendered[0] and "disabled" in rendered[0]
 print("OK — Streamlit inicia com um único seletor de arquivo ativo.")
