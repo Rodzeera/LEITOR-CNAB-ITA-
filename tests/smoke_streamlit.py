@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import runpy
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -49,7 +50,7 @@ runpy.run_path(str(ROOT / "interface_web.py"), run_name="__main__")
 assert len(rendered) == 1
 assert "CNABAnalyzer" in rendered[0]
 assert "CNABBankRegistry" in rendered[0]
-assert '<script src=' not in rendered[0]
+assert not re.search(r"<script\b[^>]*\bsrc\s*=", rendered[0], re.IGNORECASE)
 assert rendered[0].index("root.CNABCoreReader=api") < rendered[0].index("root.CNABBankRegistry=api")
 assert rendered[0].index("root.CNABCoreTaxId=api") < rendered[0].index("root.CNABBankModules.itau.validations=api")
 assert rendered[0].index("root.CNABBankRegistry=api") < rendered[0].index("root.CNABAnalyzer=api")

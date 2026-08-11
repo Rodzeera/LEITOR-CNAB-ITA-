@@ -1,29 +1,50 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
-SCRIPT_ASSETS = (
-    "core/reader.js", "core/utils.js", "core/occurrences.js", "core/models.js", "core/validator.js", "core/tax-id.js",
-    "banks/base.js",
-    "banks/itau/config.js", "banks/itau/constants.js", "banks/itau/versions/v086.js",
-    "banks/itau/layouts.js", "banks/itau/fields.js", "banks/itau/notes.js",
-    "banks/itau/records.js", "banks/itau/interpretations.js", "banks/itau/validations.js", "banks/itau/bank.js",
-    "banks/santander/config.js", "banks/santander/constants.js", "banks/santander/fields.js",
-    "banks/santander/layouts.js", "banks/santander/notes.js", "banks/santander/records.js",
-    "banks/santander/interpretations.js", "banks/santander/validations.js", "banks/santander/bank.js",
-    "banks/bradesco/config.js", "banks/bradesco/constants.js", "banks/bradesco/fields.js",
-    "banks/bradesco/layouts.js", "banks/bradesco/notes.js", "banks/bradesco/records.js",
-    "banks/bradesco/interpretations.js", "banks/bradesco/validations.js", "banks/bradesco/bank.js",
-    "core/registry.js", "core/analyzer.js",
-    "spec.js", "parser/note35-validator.js", "parser/parser-core.js", "app.js",
+SCRIPT_SRC_RE = re.compile(
+    r"<script\b[^>]*?\bsrc\s*=\s*(?P<quote>['\"])(?P<src>[^'\"]+)(?P=quote)[^>]*>\s*</script\s*>",
+    re.IGNORECASE,
 )
 
 
 def _read(relative_path: str) -> str:
     return (PROJECT_DIR / relative_path).read_text(encoding="utf-8")
+
+
+def _inline_local_scripts(html: str) -> str:
+    """Incorpora os scripts locais na mesma ordem em que aparecem no HTML."""
+
+    def replace_script(match: re.Match[str]) -> str:
+        source = match.group("src")
+        parsed = urlsplit(source)
+        if parsed.scheme or parsed.netloc or parsed.query or parsed.fragment:
+            return match.group(0)
+
+        relative_path = Path(parsed.path)
+        if relative_path.is_absolute():
+            return match.group(0)
+
+        script_path = (PROJECT_DIR / relative_path).resolve()
+        try:
+            script_path.relative_to(PROJECT_DIR)
+        except ValueError:
+            return match.group(0)
+
+        if script_path.suffix.lower() != ".js":
+            return match.group(0)
+        if not script_path.is_file():
+            raise RuntimeError(f"Script local não encontrado: {source}")
+
+        content = script_path.read_text(encoding="utf-8")
+        return f"<script>\n{content}\n</script>"
+
+    return SCRIPT_SRC_RE.sub(replace_script, html)
 
 
 def build_analyzer_html() -> str:
@@ -39,15 +60,9 @@ def build_analyzer_html() -> str:
         '<link rel="stylesheet" href="ux.css">',
         f"<style>{ux_styles}</style>",
     )
-    for asset in SCRIPT_ASSETS:
-        script_tag = f'<script src="{asset}"></script>'
-        if html.count(script_tag) != 1:
-            raise RuntimeError(
-                f"Asset obrigatório ausente ou duplicado no HTML: {asset}"
-            )
-        html = html.replace(script_tag, f"<script>{_read(asset)}</script>", 1)
+    html = _inline_local_scripts(html)
 
-    if '<script src=' in html:
+    if SCRIPT_SRC_RE.search(html):
         raise RuntimeError(
             "O componente Streamlit contém scripts externos não incorporados."
         )

@@ -48,7 +48,7 @@ require(requirements == ["streamlit==1.61.1"], "requirements.txt inesperado")
 
 python_files = [ROOT / "interface_web.py", ROOT / "utils/component_loader.py"]
 third_party: set[str] = set()
-standard_library = {"__future__", "base64", "json", "pathlib"}
+standard_library = {"__future__", "base64", "json", "pathlib", "re", "urllib"}
 for file_path in python_files:
     tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
     for node in ast.walk(tree):
@@ -70,16 +70,9 @@ for extension in ("*.py", "*.js", "*.html", "*.css", "*.toml", "*.md"):
             f"Caminho absoluto encontrado em {file_path.relative_to(ROOT)}",
         )
 
-require(
-    "parser/parser-core.js"
-    in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
-    "A interface web não carrega o parser compartilhado",
-)
-require(
-    "parser/note35-validator.js"
-    in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
-    "A interface web não carrega o validador compartilhado da Nota 35",
-)
+loader_source = (ROOT / "utils/component_loader.py").read_text(encoding="utf-8")
+require("SCRIPT_SRC_RE.sub(replace_script, html)" in loader_source, "A interface web não incorpora os scripts na ordem do HTML")
+require('match.group("src")' in loader_source, "A interface web não descobre os scripts pelo index.html")
 require(
     "CNABAnalyzer"
     in (ROOT / "app.js").read_text(encoding="utf-8"),
@@ -157,8 +150,8 @@ require(
     "Parser não executa o validador central da Nota 35",
 )
 require('src="core/analyzer.js"' in html, "Analisador bancário ausente no desktop")
-require("core/analyzer.js" in loader_py, "Analisador bancário ausente no Streamlit")
-require("core/tax-id.js" in loader_py, "Validador comum de CPF/CNPJ ausente no Streamlit")
+require("SCRIPT_SRC_RE.sub(replace_script, html)" in loader_py, "Analisador bancário não será incorporado no Streamlit")
+require('src="core/tax-id.js"' in html, "Validador comum de CPF/CNPJ ausente no index.html")
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
 require("<th>Picture</th>" not in desktop_js, "A coluna Picture ainda está visível")
 require(desktop_js.count("<th>Tipo</th>") == 1, "Coluna Tipo ausente ou duplicada")
