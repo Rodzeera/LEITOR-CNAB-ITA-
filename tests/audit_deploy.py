@@ -26,6 +26,15 @@ required = (
     "spec.js",
     "parser/note35-validator.js",
     "parser/parser-core.js",
+    "core/reader.js",
+    "core/registry.js",
+    "core/analyzer.js",
+    "core/tax-id.js",
+    "banks/base.js",
+    "banks/itau/bank.js",
+    "banks/itau/versions/v086.js",
+    "banks/santander/bank.js",
+    "banks/bradesco/bank.js",
     "layouts/observation-audit.json",
     "utils/component_loader.py",
     "tests/smoke_streamlit.py",
@@ -39,7 +48,7 @@ require(requirements == ["streamlit==1.61.1"], "requirements.txt inesperado")
 
 python_files = [ROOT / "interface_web.py", ROOT / "utils/component_loader.py"]
 third_party: set[str] = set()
-standard_library = {"__future__", "base64", "json", "pathlib"}
+standard_library = {"__future__", "base64", "json", "pathlib", "re", "urllib"}
 for file_path in python_files:
     tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
     for node in ast.walk(tree):
@@ -61,26 +70,20 @@ for extension in ("*.py", "*.js", "*.html", "*.css", "*.toml", "*.md"):
             f"Caminho absoluto encontrado em {file_path.relative_to(ROOT)}",
         )
 
+loader_source = (ROOT / "utils/component_loader.py").read_text(encoding="utf-8")
+require("SCRIPT_SRC_RE.sub(replace_script, html)" in loader_source, "A interface web não incorpora os scripts na ordem do HTML")
+require('match.group("src")' in loader_source, "A interface web não descobre os scripts pelo index.html")
 require(
-    "parser/parser-core.js"
-    in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
-    "A interface web não carrega o parser compartilhado",
-)
-require(
-    "parser/note35-validator.js"
-    in (ROOT / "utils/component_loader.py").read_text(encoding="utf-8"),
-    "A interface web não carrega o validador compartilhado da Nota 35",
-)
-require(
-    "CNABParser.create"
+    "CNABAnalyzer"
     in (ROOT / "app.js").read_text(encoding="utf-8"),
     "A interface desktop não carrega o parser compartilhado",
 )
 
-spec_source = (ROOT / "spec.js").read_text(encoding="utf-8")
-spec_match = re.fullmatch(r"\s*window\.CNAB_SPEC\s*=\s*(\{.*\});\s*", spec_source, re.DOTALL)
+spec_source = (ROOT / "banks/itau/versions/v086.js").read_text(encoding="utf-8")
+spec_match = spec_source.index("return {") + len("return ")
 require(spec_match is not None, "spec.js não contém uma especificação válida")
-spec = json.loads(spec_match.group(1))
+spec_end = spec_source.rindex("};});") + 1
+spec = json.loads(spec_source[spec_match:spec_end])
 require(len(spec["notes"]) == 42, "O catálogo oficial deve conter as 42 notas do manual")
 require(
     "IDENTIFICAÇÃO DO CNPJ E AG/CONTA" in spec["notes"]["1"],
@@ -143,9 +146,12 @@ require("getvalue()" not in loader_py and "base64" not in loader_py, "Camada web
 require('value="informacao"' in html, "Filtro de informações da Nota 35 ausente")
 require('src="parser/note35-validator.js"' in html, "Validador da Nota 35 ausente no desktop")
 require(
-    "note35?.validate(records,issues)" in (ROOT / "parser/parser-core.js").read_text(encoding="utf-8"),
+    "validateNote35(records,issues)" in (ROOT / "banks/itau/validations.js").read_text(encoding="utf-8"),
     "Parser não executa o validador central da Nota 35",
 )
+require('src="core/analyzer.js"' in html, "Analisador bancário ausente no desktop")
+require("SCRIPT_SRC_RE.sub(replace_script, html)" in loader_py, "Analisador bancário não será incorporado no Streamlit")
+require('src="core/tax-id.js"' in html, "Validador comum de CPF/CNPJ ausente no index.html")
 require(desktop_js.count("<th>Observações</th>") == 1, "Coluna Observações ausente ou duplicada")
 require("<th>Picture</th>" not in desktop_js, "A coluna Picture ainda está visível")
 require(desktop_js.count("<th>Tipo</th>") == 1, "Coluna Tipo ausente ou duplicada")

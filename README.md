@@ -1,6 +1,6 @@
-# Leitor e Validador CNAB 240 Itaú
+# CNAB240 Analyzer — arquitetura multi-banco
 
-Aplicação web local para inspecionar arquivos de remessa `.rem` e `.txt`, registro por registro e campo por campo.
+Aplicação web local para inspecionar arquivos de remessa `.rem` e `.txt`, registro por registro e campo por campo. O banco é identificado automaticamente pelo código das posições 1–3.
 
 Base documental: **Manual Técnico SISPAG Itaú - Layout de Arquivo CNAB 240, versão 086, atualização 05/05/2022**.
 
@@ -35,22 +35,23 @@ python3 -m http.server 8765
 
 Depois abra `http://localhost:8765`.
 
-## Duas interfaces, um único parser
+## Duas interfaces, um único motor
 
 - Desktop: `iniciar.bat` ou `index.html`;
 - Web: `streamlit run interface_web.py`;
-- Núcleo compartilhado: `parser/parser-core.js`.
+- Motor compartilhado: `core/`;
+- Registro de bancos: `core/registry.js`;
+- Implementações segregadas: `banks/<banco>/`.
 
-As interfaces não possuem cópias das regras de negócio. Ambas carregam o mesmo módulo
-`parser-core.js` e o mesmo `spec.js`, portanto produzem o mesmo resultado para os mesmos bytes.
+As interfaces não possuem cópias das regras de negócio. Ambas carregam o mesmo CORE e os mesmos módulos bancários, portanto produzem o mesmo resultado para os mesmos bytes.
 O Python da interface web apenas recebe o upload e monta o componente visual; ele não interpreta
 nem altera o CNAB.
 
 ### Fluxo único de importação
 
 Os dois seletores de arquivo entregam os bytes originais a
-`CNABParser.parseBytes()`. A detecção de encoding ocorre exclusivamente nesse
-módulo: UTF-8, UTF-16 LE ou UTF-16 BE quando existe BOM e Windows-1252 para
+`CNABAnalyzer.analyzeBytes()`. A detecção de encoding ocorre exclusivamente em
+`core/reader.js`: UTF-8, UTF-16 LE ou UTF-16 BE quando existe BOM e Windows-1252 para
 arquivos CNAB sem BOM. Nenhuma interface converte o arquivo para texto antes da
 análise e o parser é chamado uma única vez.
 
@@ -113,6 +114,10 @@ esperada pelo Community Cloud.
   TED Corretora (forma 41/43 com finalidade `00011`). TEDs com outra finalidade
   e demais formas não recebem novas ocorrências. Os ISPBs dos Segmentos A e B
   são associados pelo mesmo lote e número de registro.
+- validação matemática de CPF/CNPJ, com dígitos verificadores, coerência entre
+  tipo de inscrição e número, preenchimento físico com zeros à esquerda e
+  respeito à opcionalidade definida pelo layout. O utilitário matemático é
+  comum, mas somente o módulo Itaú decide quais posições são aplicáveis.
 
 Para a Nota 35, um ISPB é considerado estruturalmente válido quando contém oito
 dígitos e não é `00000000`. A lista oficial de participantes do STR não é
@@ -124,7 +129,7 @@ O aplicativo exibe posição inicial/final, nome, significado, picture, valor br
 
 ## Privacidade e codificação
 
-O processamento acontece integralmente no navegador. O arquivo não é enviado a servidor algum. A leitura usa ISO-8859-1, codificação comum em arquivos bancários legados.
+O processamento acontece integralmente no navegador. O arquivo não é enviado a servidor algum. A leitura aceita UTF-8/UTF-16 com BOM e usa Windows-1252 para arquivos bancários legados sem BOM.
 
 ## Limites importantes
 
@@ -137,7 +142,7 @@ A pasta `exemplos` contém:
 - `valido.rem`: estrutura sintética consistente;
 - `invalido.rem`: erros propositais de tamanho, banco, data, tipo de campo, sequência e totais.
 
-Execute `testar.bat` no Windows ou `node tests/run-tests.js` em qualquer ambiente com Node.js. O teste confere a integridade da especificação, os 240 caracteres do arquivo válido, os defeitos esperados do inválido e a sintaxe dos scripts.
+Execute `testar.bat` no Windows ou `node tests/run-tests.js` em qualquer ambiente com Node.js. O teste confere a integridade da especificação, os 240 caracteres do arquivo válido, os defeitos esperados do inválido, a sintaxe dos scripts e os 13 cenários obrigatórios de CPF/CNPJ.
 
 Auditoria adicional para publicação:
 
@@ -148,13 +153,31 @@ python tests/smoke_streamlit.py
 
 ## Estrutura
 
-- `index.html`, `styles.css`, `app.js`: aplicação;
+- `index.html`, `styles.css`, `app.js`: interface única, sem regras bancárias;
 - `interface_web.py`: entrada da interface Streamlit;
-- `parser/parser-core.js`: parser e regras de negócio compartilhados;
-- `parser/note35-validator.js`: validação centralizada e cruzada de Câmara/ISPB;
+- `core/reader.js`: leitura física e codificação;
+- `core/models.js`, `core/occurrences.js`, `core/validator.js`, `core/utils.js`: infraestrutura comum;
+- `core/tax-id.js`: cálculo reutilizável dos dígitos verificadores de CPF/CNPJ;
+- `core/registry.js`: cadastro central de bancos;
+- `core/analyzer.js`: identificação automática e despacho para o módulo correto;
+- `banks/base.js`: contrato comum obrigatório para todos os bancos;
+- `banks/itau/`: layouts, campos, notas, identificação, interpretações e validações Itaú;
+- `banks/itau/versions/v086.js`: definição versionada do manual v086;
+- `banks/santander/` e `banks/bradesco/`: esqueletos isolados, sem layouts ou regras inventadas;
+- `parser/parser-core.js`, `parser/note35-validator.js` e `spec.js`: fachadas de compatibilidade para integrações existentes;
 - `utils/component_loader.py`: montagem do componente web com caminhos relativos;
-- `spec.js`: layouts estruturados extraídos das tabelas do manual;
 - `layouts/observation-audit.json`: relatório da auditoria posicional de notas e observações;
-- `manual-extraido.txt`: texto integral extraído para auditoria;
 - `exemplos/`: remessas sintéticas;
-- `tests/`: testes automatizados.
+- `tests/core/`, `tests/itau/`, `tests/santander/` e `tests/bradesco/`: testes automatizados segregados.
+
+## Bancos e isolamento
+
+| Código | Banco | Estado |
+|---|---|---|
+| 341 | Itaú | Ativo — SISPAG v086 |
+| 033 | Santander | Em breve |
+| 237 | Bradesco | Em breve |
+
+Arquivos 033 e 237 são identificados, mas não são interpretados com o layout 341. A interface mostra uma ocorrência informativa e preserva exatamente a quantidade de linhas físicas. Códigos não cadastrados geram uma ocorrência de banco desconhecido.
+
+Para adicionar um banco, replique apenas o esqueleto estrutural de `banks/santander/`, preencha o conhecimento a partir do manual oficial do novo banco e registre o módulo em `core/registry.js`. Não copie posições, notas, constantes, interpretações ou validações de outro banco. O contrato em `banks/base.js` impede que um módulo incompleto seja registrado silenciosamente.
