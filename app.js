@@ -1,10 +1,17 @@
 (()=>{"use strict";
-const S=window.CNAB_SPEC,$=s=>document.querySelector(s),P=window.CNABParser.create(S);
+const A=window.CNABAnalyzer,$=s=>document.querySelector(s);
 let analysis=null,selected=0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const currentBank=()=>A.bankForResult(analysis);
+function updateBankPresentation(){
+  const bank=currentBank()||A.registry.active()[0];if(!bank)return;
+  $("#brandTitle").textContent=`Leitor CNAB 240 ${bank.bankName}`;
+  $("#brandSubtitle").textContent=bank.status==="active"?`${bank.metadata?.manualShort||"CNAB240"} · análise inteiramente local`:`Banco ${bank.bankName} · validador em breve`;
+  $("#helpText").textContent=bank.status==="active"?`Os layouts e a terminologia vêm do ${bank.metadata?.manual||"manual CNAB240"}, versão ${bank.metadata?.defaultVersion||"—"} (${bank.metadata?.manualUpdated||"data não informada"}). Validações condicionais dependem dos dados do arquivo.`:`Banco ${bank.bankName} identificado. O validador CNAB240 deste banco ainda não foi implementado.`;
+}
 
 function loadBytes(bytes,name){
-  analysis=P.parseBytes(bytes,name);selected=0;render();
+  analysis=A.analyzeBytes(bytes,name);selected=0;updateBankPresentation();render();
   $("#drop").hidden=true;$("#workspace").hidden=false;
 }
 async function read(file){loadBytes(await file.arrayBuffer(),file.name)}
@@ -37,7 +44,7 @@ function fieldObservations(f){
   return (f.observations||[]).map(observation=>{
     if(observation.kind==="note"){
       const number=String(observation.note);
-      return {icon:"📖",title:`Nota ${number}`,text:S.notes[number]||"Nota referenciada no manual oficial."};
+      return {icon:"📖",title:`Nota ${number}`,text:currentBank()?.getNote?.(number)||"Nota referenciada no manual oficial."};
     }
     if(observation.kind==="fixed")return {icon:"📌",title:observation.title||"Caractere fixo ou constante",text:observation.text};
     return {icon:"ℹ️",title:observation.title||"Regra do layout",text:observation.text};
@@ -60,7 +67,8 @@ function show(i){
   const issues=r.issues.length?`<div class="issues">${r.issues.map(x=>`<div class="issue ${x.severity}"><b>${severityLabel[x.severity]||x.severity.toUpperCase()}</b> · posições ${x.start}-${x.end}: ${esc(x.message)}</div>`).join("")}</div>`:"";
   const rows=r.fields.map(f=>{const bad=f.issues.length?"field-error":"",observations=fieldObservations(f).map(observationButton).join(""),format=pictureParts(f.picture,f.end-f.start+1);return`<tr class="${bad}"><td>${f.start}–${f.end}</td><td><b>${esc(f.name)}</b><br><small>${esc(f.meaning)}</small></td><td>${esc(format.type)}</td><td>${format.quantity}</td><td><code>${esc(f.value)}</code></td><td>${esc(f.interpreted)}</td><td><div class="obs-list">${observations}</div></td></tr>`}).join("");
   const detailSeverity=r.issues.some(x=>x.severity==="erro")?"erro":r.issues.some(x=>x.severity==="aviso")?"aviso":r.issues.some(x=>x.severity==="informacao")?"informacao":"";
-  $("#detail").innerHTML=`<div class="detail-head"><div><h2>Linha ${r.line} · ${esc(r.title)}</h2><p>Layout do manual, página ${S.layouts[r.key]?.manualPage||"—"} · ${r.raw.length} caracteres</p></div><span class="badge ${detailSeverity}">${r.issues.length?r.issues.length+" ocorrência(s)":"Registro válido"}</span></div><div class="raw">${raw||"(linha vazia)"}</div>${issues}<table class="fields"><thead><tr><th>Posição</th><th>Campo / significado</th><th>Tipo</th><th>Qtde</th><th>Valor bruto</th><th>Interpretado</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const manualPage=currentBank()?.getLayout?.(r.key)?.manualPage||"—";
+  $("#detail").innerHTML=`<div class="detail-head"><div><h2>Linha ${r.line} · ${esc(r.title)}</h2><p>Layout do manual, página ${manualPage} · ${r.raw.length} caracteres</p></div><span class="badge ${detailSeverity}">${r.issues.length?r.issues.length+" ocorrência(s)":"Registro válido"}</span></div><div class="raw">${raw||"(linha vazia)"}</div>${issues}<table class="fields"><thead><tr><th>Posição</th><th>Campo / significado</th><th>Tipo</th><th>Qtde</th><th>Valor bruto</th><th>Interpretado</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.querySelectorAll(".obs-icon").forEach(button=>button.onclick=()=>{$("#help h2").textContent=button.dataset.title;$("#help p").textContent=button.dataset.text;$("#help").showModal()});
 }
 ["search","lotFilter","segmentFilter","severityFilter","lineFilter"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",renderRecords));
@@ -68,4 +76,5 @@ $("#chooseFile").onclick=()=>$("#file").click();
 $("#file").onchange=e=>e.target.files[0]&&read(e.target.files[0]);
 $("#newFile").onclick=resetUpload;$("#theme").onclick=()=>document.body.classList.toggle("dark");
 window.CNAB_UI={loadBytes,read};
+updateBankPresentation();
 })();
