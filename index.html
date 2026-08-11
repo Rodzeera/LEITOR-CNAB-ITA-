@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CNAB240 Analyzer</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="ux.css">
+  <title>Leitor CNAB 240 Itaú</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="ux.css">
 </head>
 <body>
-<header><div class="brand"><span class="logo">CNAB</span><div><h1 id="brandTitle">CNAB240 Analyzer</h1><p id="brandSubtitle">Identificação automática do banco · análise inteiramente local</p></div></div><button id="theme" class="ghost">◐ Tema</button></header>
+<header><div class="brand"><span class="logo">CNAB</span><div><h1>Leitor CNAB 240 Itaú</h1><p>Manual SISPAG v086 · análise inteiramente local</p></div></div><button id="theme" class="ghost">◐ Tema</button></header>
 <main>
   <section id="drop" class="drop"><input id="file" type="file" accept=".rem,.txt,text/plain"><div class="drop-icon">⇧</div><button id="uploadVisual" class="upload-visual" type="button" disabled>Upload CNAB240</button><h2>Analise seu arquivo de remessa</h2><p>Use o botão abaixo para selecionar um arquivo .rem ou .txt.</p><button id="chooseFile" class="primary" type="button">Importe seu Arquivo de Remessa</button><small>Nenhum dado sai do seu computador.</small></section>
   <section id="workspace" hidden>
@@ -24,13 +24,7 @@
     </div>
   </section>
 </main>
-<dialog id="help"><button class="close" onclick="this.closest('dialog').close()">×</button><h2>Sobre a validação</h2><p id="helpText">O banco é identificado automaticamente pelas posições 1–3 do arquivo CNAB240.</p></dialog>
+<dialog id="help"><button class="close" onclick="this.closest('dialog').close()">×</button><h2>Sobre a validação</h2><p>Os layouts e a terminologia vêm do Manual Técnico SISPAG Itaú CNAB 240 v086 (05/05/2022). Validações condicionais dependem da forma de pagamento informada no header do lote.</p></dialog>
 <button class="help" onclick="document.querySelector('#help').showModal()">?</button>
-<script src="core/reader.js"></script><script src="core/utils.js"></script><script src="core/occurrences.js"></script><script src="core/models.js"></script><script src="core/validator.js"></script>
-<script src="banks/base.js"></script>
-<script src="banks/itau/config.js"></script><script src="banks/itau/constants.js"></script><script src="banks/itau/versions/v086.js"></script><script src="banks/itau/layouts.js"></script><script src="banks/itau/fields.js"></script><script src="banks/itau/notes.js"></script><script src="banks/itau/records.js"></script><script src="banks/itau/interpretations.js"></script><script src="banks/itau/validations.js"></script><script src="banks/itau/bank.js"></script>
-<script src="banks/santander/config.js"></script><script src="banks/santander/constants.js"></script><script src="banks/santander/fields.js"></script><script src="banks/santander/layouts.js"></script><script src="banks/santander/notes.js"></script><script src="banks/santander/records.js"></script><script src="banks/santander/interpretations.js"></script><script src="banks/santander/validations.js"></script><script src="banks/santander/bank.js"></script>
-<script src="banks/bradesco/config.js"></script><script src="banks/bradesco/constants.js"></script><script src="banks/bradesco/fields.js"></script><script src="banks/bradesco/layouts.js"></script><script src="banks/bradesco/notes.js"></script><script src="banks/bradesco/records.js"></script><script src="banks/bradesco/interpretations.js"></script><script src="banks/bradesco/validations.js"></script><script src="banks/bradesco/bank.js"></script>
-<script src="core/registry.js"></script><script src="core/analyzer.js"></script>
 <script src="spec.js"></script><script src="parser/note35-validator.js"></script><script src="parser/parser-core.js"></script><script src="app.js"></script>
 </body></html>
