@@ -141,4 +141,4 @@ require("./core/registry.test.js");
 require("./itau/regression.test.js");
 require("./itau/tax-id-validation.test.js");
 require("./santander/not-implemented.test.js");
-require("./bradesco/not-implemented.test.js");
+require("./bradesco/multipag.test.js");

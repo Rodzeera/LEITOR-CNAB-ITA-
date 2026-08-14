@@ -1,183 +1,127 @@
 # CNAB240 Analyzer — arquitetura multi-banco
 
-Aplicação web local para inspecionar arquivos de remessa `.rem` e `.txt`, registro por registro e campo por campo. O banco é identificado automaticamente pelo código das posições 1–3.
+Aplicação local/web para inspecionar arquivos de remessa `.rem` e `.txt`, registro por registro e campo por campo. O banco é identificado automaticamente pelo código das posições 1–3.
 
-Base documental: **Manual Técnico SISPAG Itaú - Layout de Arquivo CNAB 240, versão 086, atualização 05/05/2022**.
+Bases documentais:
 
-## Como usar
+- **Manual Técnico SISPAG Itaú — CNAB 240, versão 086, atualização 05/05/2022**;
+- **Layout Multipag Bradesco CNAB 240, versão 04, atualização 06/05/2019**.
 
-### Opção mais simples (Windows)
+## Como executar
 
-1. Dê dois cliques em `iniciar.bat`.
-2. O navegador abrirá em `http://localhost:8765`.
-3. Clique em **Importe seu Arquivo de Remessa** e selecione o arquivo `.rem` ou `.txt`.
+### Desktop no Windows
 
-Se o Python não estiver instalado, abra diretamente o arquivo `index.html`. A análise também funciona assim, sem servidor.
+Execute:
 
-### Interface web com Streamlit
+```text
+iniciar.bat
+```
 
-Funciona no Windows, macOS e Linux:
+O navegador abrirá em `http://localhost:8765`. Também é possível abrir `index.html` diretamente.
+
+### Web com Streamlit
 
 ```sh
 pip install -r requirements.txt
 streamlit run interface_web.py
 ```
 
-O navegador abrirá a interface Streamlit. Clique em **Importe seu Arquivo de Remessa** para selecionar o arquivo.
+O projeto usa apenas caminhos relativos calculados com `pathlib` e está pronto para Linux e Streamlit Community Cloud.
 
-### Interface desktop no macOS / Linux
+## Upload e privacidade
 
-No terminal, dentro desta pasta:
+Existe um único ponto de entrada: **Importe seu Arquivo de Remessa**. O controle “Upload CNAB240” é apenas visual e permanece desabilitado. Não existem outro uploader, drag-and-drop ou leitura paralela.
 
-```sh
-python3 -m http.server 8765
-```
+Os bytes são entregues uma única vez a `CNABAnalyzer.analyzeBytes()`. `core/reader.js` reconhece UTF-8/UTF-16 com BOM e usa Windows-1252 quando não há BOM. O processamento acontece no navegador; o arquivo não é enviado ao servidor Streamlit.
 
-Depois abra `http://localhost:8765`.
-
-## Duas interfaces, um único motor
-
-- Desktop: `iniciar.bat` ou `index.html`;
-- Web: `streamlit run interface_web.py`;
-- Motor compartilhado: `core/`;
-- Registro de bancos: `core/registry.js`;
-- Implementações segregadas: `banks/<banco>/`.
-
-As interfaces não possuem cópias das regras de negócio. Ambas carregam o mesmo CORE e os mesmos módulos bancários, portanto produzem o mesmo resultado para os mesmos bytes.
-O Python da interface web apenas recebe o upload e monta o componente visual; ele não interpreta
-nem altera o CNAB.
-
-### Fluxo único de importação
-
-Os dois seletores de arquivo entregam os bytes originais a
-`CNABAnalyzer.analyzeBytes()`. A detecção de encoding ocorre exclusivamente em
-`core/reader.js`: UTF-8, UTF-16 LE ou UTF-16 BE quando existe BOM e Windows-1252 para
-arquivos CNAB sem BOM. Nenhuma interface converte o arquivo para texto antes da
-análise e o parser é chamado uma única vez.
-
-Na interface, apenas o botão **Importe seu Arquivo de Remessa** abre o
-seletor. O controle “Upload CNAB240” é exclusivamente visual e desabilitado.
-Não existem importação por drag & drop, label associado ao input ou uploader
-paralelo do Streamlit.
-
-Na tabela de campos, a coluna **Interpretado** contém apenas o valor. Notas,
-constantes, preenchimentos fixos, formatos e regras do layout são apresentados
-na coluna **Observações**, usando 📖, 📌 e ℹ️. Os ícones exibem um resumo no
-tooltip e abrem o conteúdo completo no modal.
-
-A notação técnica `Picture` permanece armazenada no layout, mas é apresentada
-de forma mais direta na tabela: **Tipo** (`9` como Numérico e `X` como
-Caractere) e **Qtde**, calculada automaticamente pela soma dos tamanhos da
-notação. Assim, formatos decimais compostos como `9(07)V9(08)` são exibidos
-como **Numérico / 15**, sem alterar a interpretação ou a validação do campo.
-
-### Associação auditada das observações
-
-As observações não são inferidas por semelhança de nome ou texto durante a
-execução. Cada nota, caractere fixo, constante ou regra está vinculada
-explicitamente ao layout, à página do manual e às posições inicial e final do
-respectivo campo em `spec.js`. Uma nota só é apresentada quando a tabela oficial
-daquele registro referencia expressamente seu número.
-
-O catálogo das Notas 1 a 42 foi reconstruído na ordem documental para impedir
-que itens numerados dentro de uma nota sejam interpretados como novas notas. O
-resultado verificável da revisão integral está em
-`layouts/observation-audit.json`.
-
-## Publicação no Streamlit Community Cloud
-
-1. Envie o conteúdo desta pasta para a raiz de um repositório GitHub.
-2. No Streamlit Community Cloud, selecione o repositório e a branch.
-3. Informe `interface_web.py` como arquivo principal.
-4. Mantenha o Python padrão 3.12.
-5. Clique em **Deploy**. O aplicativo não utiliza secrets, banco de dados,
-   serviços externos ou pacotes Linux adicionais.
-
-O arquivo `requirements.txt` fixa a versão de Streamlit validada pelo projeto.
-A configuração opcional fica em `.streamlit/config.toml`, conforme a estrutura
-esperada pelo Community Cloud.
-
-## O que é validado
-
-- comprimento exato de 240 caracteres por registro;
-- campos numéricos e alfanuméricos;
-- conteúdos fixos, brancos e zeros;
-- banco Itaú (341), lote, tipo de registro e segmento;
-- datas no formato DDMMAAAA;
-- valores com vírgula decimal implícita;
-- sequência dos detalhes e repetição da sequência nos complementos;
-- total de registros por lote;
-- quantidade de lotes e registros no trailer do arquivo;
-- presença de segmentos principais conforme a forma de pagamento, incluindo A/B para PIX Transferência, J/J-52 para boletos, O para concessionárias e N para tributos.
-- validação isolada da Nota 35: Câmara `009` exclusivamente para PIX
-  Transferência (forma 45) e Câmara `888` mais ISPB válido exclusivamente para
-  TED Corretora (forma 41/43 com finalidade `00011`). TEDs com outra finalidade
-  e demais formas não recebem novas ocorrências. Os ISPBs dos Segmentos A e B
-  são associados pelo mesmo lote e número de registro.
-- validação matemática de CPF/CNPJ, com dígitos verificadores, coerência entre
-  tipo de inscrição e número, preenchimento físico com zeros à esquerda e
-  respeito à opcionalidade definida pelo layout. O utilitário matemático é
-  comum, mas somente o módulo Itaú decide quais posições são aplicáveis.
-
-Para a Nota 35, um ISPB é considerado estruturalmente válido quando contém oito
-dígitos e não é `00000000`. A lista oficial de participantes do STR não é
-consultada externamente, mantendo o processamento local e independente de rede.
-
-Cada linha física é lida uma única vez. São aceitas terminações de linha Windows (CRLF), Linux/macOS (LF) e legadas (CR); a quebra final apenas encerra o último registro e não cria um registro vazio artificial.
-
-O aplicativo exibe posição inicial/final, nome, significado, picture, valor bruto, valor interpretado, página do manual e notas referenciadas. Os filtros aceitam lote, segmento, linha, severidade e busca livre.
-
-## Privacidade e codificação
-
-O processamento acontece integralmente no navegador. O arquivo não é enviado a servidor algum. A leitura aceita UTF-8/UTF-16 com BOM e usa Windows-1252 para arquivos bancários legados sem BOM.
-
-## Limites importantes
-
-Algumas regras do manual dependem de contratos, cadastros bancários ou dados externos (por exemplo, serviços previamente contratados e validação cadastral de favorecidos). Nesses casos, o app apresenta os campos e notas aplicáveis, mas não inventa uma validação sem acesso ao cadastro do Itaú. A homologação bancária continua sendo a confirmação definitiva.
-
-## Testes
-
-A pasta `exemplos` contém:
-
-- `valido.rem`: estrutura sintética consistente;
-- `invalido.rem`: erros propositais de tamanho, banco, data, tipo de campo, sequência e totais.
-
-Execute `testar.bat` no Windows ou `node tests/run-tests.js` em qualquer ambiente com Node.js. O teste confere a integridade da especificação, os 240 caracteres do arquivo válido, os defeitos esperados do inválido, a sintaxe dos scripts e os 13 cenários obrigatórios de CPF/CNPJ.
-
-Auditoria adicional para publicação:
-
-```sh
-python tests/audit_deploy.py
-python tests/smoke_streamlit.py
-```
-
-## Estrutura
-
-- `index.html`, `styles.css`, `app.js`: interface única, sem regras bancárias;
-- `interface_web.py`: entrada da interface Streamlit;
-- `core/reader.js`: leitura física e codificação;
-- `core/models.js`, `core/occurrences.js`, `core/validator.js`, `core/utils.js`: infraestrutura comum;
-- `core/tax-id.js`: cálculo reutilizável dos dígitos verificadores de CPF/CNPJ;
-- `core/registry.js`: cadastro central de bancos;
-- `core/analyzer.js`: identificação automática e despacho para o módulo correto;
-- `banks/base.js`: contrato comum obrigatório para todos os bancos;
-- `banks/itau/`: layouts, campos, notas, identificação, interpretações e validações Itaú;
-- `banks/itau/versions/v086.js`: definição versionada do manual v086;
-- `banks/santander/` e `banks/bradesco/`: esqueletos isolados, sem layouts ou regras inventadas;
-- `parser/parser-core.js`, `parser/note35-validator.js` e `spec.js`: fachadas de compatibilidade para integrações existentes;
-- `utils/component_loader.py`: montagem do componente web com caminhos relativos;
-- `layouts/observation-audit.json`: relatório da auditoria posicional de notas e observações;
-- `exemplos/`: remessas sintéticas;
-- `tests/core/`, `tests/itau/`, `tests/santander/` e `tests/bradesco/`: testes automatizados segregados.
-
-## Bancos e isolamento
+## Bancos suportados
 
 | Código | Banco | Estado |
 |---|---|---|
 | 341 | Itaú | Ativo — SISPAG v086 |
+| 237 | Bradesco | Ativo — Multipag v04 |
 | 033 | Santander | Em breve |
-| 237 | Bradesco | Em breve |
 
-Arquivos 033 e 237 são identificados, mas não são interpretados com o layout 341. A interface mostra uma ocorrência informativa e preserva exatamente a quantidade de linhas físicas. Códigos não cadastrados geram uma ocorrência de banco desconhecido.
+O código 033 permanece segregado. Um arquivo Santander recebe mensagem controlada e nunca é processado pelos módulos Itaú ou Bradesco.
 
-Para adicionar um banco, replique apenas o esqueleto estrutural de `banks/santander/`, preencha o conhecimento a partir do manual oficial do novo banco e registre o módulo em `core/registry.js`. Não copie posições, notas, constantes, interpretações ou validações de outro banco. O contrato em `banks/base.js` impede que um módulo incompleto seja registrado silenciosamente.
+## Bradesco Multipag v04
+
+Implementação baseada exclusivamente no manual Bradesco atualizado em 06/05/2019:
+
+- layout de arquivo `089`;
+- lote de pagamentos `045`;
+- lote de títulos `040`;
+- lote de tributos `012`;
+- Header e Trailer de Arquivo/Lote;
+- Segmentos A, B, C, 5, Z, J, J52, O, N e W;
+- sublayouts N1 (GPS), N2 (DARF), N3 (DARF Simples), N4 (GARE-SP) e W1 (FGTS);
+- sequência 9–13 crescente para todos os registros detalhe;
+- totais de registros, lotes, valores e quantidades de moeda;
+- catálogo G059 de ocorrências de retorno;
+- Câmara `018`, `700` ou `888` conforme a forma de lançamento;
+- ISPB obrigatório no Segmento B, posições 233–240, quando a Câmara é `888`;
+- W1 obrigatório com O para convênios FGTS 0181/0182;
+- CPF/CNPJ com dígitos verificadores.
+
+O Segmento B não é exigido globalmente, conforme a matriz geral de composição do manual. No Bradesco, G005 preserva o domínio `0 = Isento/Não informado`, `1 = CPF`, `2 = CNPJ`, `3 = PIS/PASEP` e `9 = Outro`. Em tributos, N003 usa `01 = CNPJ` e `02 = CPF`. Essas decisões ficam exclusivamente no módulo Bradesco.
+
+## Itaú SISPAG v086
+
+As regras existentes permanecem isoladas em `banks/itau/`, incluindo identificação de registros, notas, interpretações, obrigatoriedade de segmentos, Nota 35 e validação de CPF/CNPJ. A suíte de regressão compara o resultado moderno com a fachada legada para impedir mudanças acidentais.
+
+## Interface de análise
+
+A tabela apresenta posição, campo/significado, Tipo, Qtde, valor bruto, valor interpretado e Observações. A notação Picture permanece no layout e é convertida automaticamente em Tipo/Qtde apenas na apresentação. Notas, constantes e regras ficam exclusivamente em Observações.
+
+Os filtros permitem selecionar lote, segmento, linha, severidade e texto livre. Cada linha física gera exatamente um registro exibido.
+
+## Estrutura
+
+- `index.html`, `styles.css`, `ux.css`, `app.js`: interface compartilhada;
+- `interface_web.py`: entrada Streamlit;
+- `utils/component_loader.py`: incorpora CSS e JavaScript local na ordem declarada no HTML;
+- `core/`: leitura, ocorrências, validações genéricas, CPF/CNPJ, registry e despacho;
+- `banks/itau/versions/v086.js`: layout Itaú versionado;
+- `banks/bradesco/versions/v004.js`: layout Bradesco versionado;
+- `banks/santander/`: módulo futuro isolado;
+- `parser/` e `spec.js`: fachadas de compatibilidade do Itaú;
+- `exemplos/`: remessas sintéticas;
+- `tests/`: testes segregados por core e banco.
+
+## Amostras
+
+- `exemplos/valido.rem`: Itaú sintético válido;
+- `exemplos/invalido.rem`: Itaú sintético inválido;
+- `exemplos/bradesco-valido.rem`: Bradesco sintético válido;
+- `exemplos/bradesco-invalido.rem`: Bradesco com Câmara, CPF e total inválidos.
+
+## Testes
+
+No Windows:
+
+```text
+testar.bat
+```
+
+Em qualquer sistema com Node.js e Python:
+
+```sh
+node tests/run-tests.js
+python tests/audit_deploy.py
+python tests/smoke_streamlit.py
+```
+
+A suíte Bradesco executa 54 verificações específicas, incluindo cobertura 1–240 dos layouts, segmentos/sublayouts, Câmara/ISPB, CPF/CNPJ, sequência, totais, ocorrências, contagem física e terminações CRLF/LF/CR.
+
+## Streamlit Community Cloud
+
+1. Envie o conteúdo desta pasta para a raiz do repositório GitHub.
+2. Selecione `interface_web.py` como arquivo principal.
+3. Use o Python padrão 3.12.
+4. Faça o deploy.
+
+Não são necessários secrets, banco de dados, serviços externos ou pacotes de sistema. Todos os scripts locais declarados em `index.html`, inclusive `banks/bradesco/versions/v004.js`, são incorporados no HTML final antes da validação que bloqueia referências externas.
+
+## Limites
+
+Regras que dependem de contrato, cadastro bancário ou dados externos não são inventadas. O aplicativo valida apenas o que pode ser determinado pelo arquivo e pelos manuais versionados. A homologação bancária continua sendo a confirmação definitiva.
